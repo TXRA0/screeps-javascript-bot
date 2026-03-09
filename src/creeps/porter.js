@@ -41,28 +41,70 @@ var porter = {
 			creep.getEnergyTargetPorter();
         }
     },
-    // checks if the room needs to spawn a creep
     spawn: function(room) {
-        var porters = _.filter(Game.creeps, (creep) => creep.memory.role == 'porter' && creep.room.name == room.name);
-        console.log('Porter: ' + porters.length, room.name);
+		if (room && room.controller && room.controller.level < 4 && !room.storage) {
+			return;
+		}
+        const porters = _.filter(
+            Game.creeps,
+            c => c.memory.role == 'porter' && c.room.name == room.name
+        );
 
-        if (porters.length < 1) {
-            return true;
+        const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'porter').length;
+
+        const neededPorters = 1
+
+
+        if (porters.length + queued < neededPorters) {
+            this.request(room);
         }
     },
-    // returns an object with the data to spawn a new creep
-	spawnData: function(room) {
-		let name = 'Porter' + Game.time;
-		let body = [CARRY, CARRY, MOVE];
-		let targetRoom = room;
-		let memory = { role: 'porter', targetRoom: targetRoom };
 
-		let spawnCondition = () => {
-			return room.controller.level >= 4 && room.find(FIND_STRUCTURES).some(s => s.structureType === STRUCTURE_STORAGE);
-		};
+    request: function(room) {
+        room.memory.spawnQueue = room.memory.spawnQueue || [];
 
-		return { name, body, memory, spawnCondition };
-	}
+        if (!room.memory.spawnQueue.find(r => r.role === 'porter')) {
+            room.memory.spawnQueue.push({
+                role: "porter",
+                priority: 2
+            });
+        }
+    },
+
+	getBody: function(room) {
+		let segment = [CARRY, CARRY, MOVE];
+
+		let harvesters = _.filter(
+			Game.creeps,
+			c => c.memory.role === 'harvester' && c.room.name === room.name
+		);
+
+		let energyAvailable = harvesters.length ? room.energyCapacityAvailable : room.energyAvailable;
+
+		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
+
+		let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
+		maxSegments = Math.min(maxSegments, 12);
+
+		let body = [];
+		for (let i = 0; i < maxSegments; i++) {
+			body.push(...segment);
+		}
+
+		return body;
+	},
+
+    getSpawnData: function(room) {
+        return {
+            name: "porter" + Game.time,
+            memory: {
+                role: 'porter',
+                homeRoom: room.name,
+                working: false,
+                targetRoom: room.name
+            }
+        };
+    },
 };
 
 module.exports = porter;

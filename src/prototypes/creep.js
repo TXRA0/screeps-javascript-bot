@@ -390,3 +390,61 @@ Creep.prototype.upgrade = function (creep) {
 
     creep.memory._triedUpgrade = false;
 };
+
+Creep.prototype.building = function(creep) {
+	const sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+	if (!sites.length) {
+		if (creep.memory.role === "builder" && !creep.memory._triedUpgrade) {
+			creep.memory._triedUpgrade = true;
+			this.upgrade(creep);
+			creep.memory._triedUpgrade = false;
+		}
+		return;
+	}
+
+	let prioritySite = null;
+	for (let i = 0; i < sites.length; i++) {
+		if (sites[i].structureType === STRUCTURE_EXTENSION) {
+			prioritySite = sites[i];
+			break;
+		}
+	}
+	const target = creep.pos.findClosestByPath(prioritySite ? [prioritySite] : sites);
+	if (!target) return;
+
+	const result = creep.build(target);
+	if (result === ERR_NOT_IN_RANGE) {
+		creep.moveTo(target, { reusePath: 10, visualizePathStyle: { stroke: '#ffffff' } });
+		return;
+	}
+
+	if (
+		(target.structureType === STRUCTURE_WALL || target.structureType === STRUCTURE_RAMPART) &&
+		target.hits < 10000
+		) {
+		if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+			creep.moveTo(target, { reusePath: 10, visualizePathStyle: { stroke: '#ffaa00' } });
+		}
+	}
+}
+Creep.prototype.defend = function(creep) {
+	const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+	if (hostiles.length) {
+		const target = creep.pos.findClosestByRange(hostiles);
+	if (target && creep.attack(target) === ERR_NOT_IN_RANGE) creep.moveTo(target);
+		return;
+	}
+
+	const onRampart = creep.pos.lookFor(LOOK_STRUCTURES)
+	.some(s => s.structureType === STRUCTURE_RAMPART);
+	if (onRampart) return;
+
+	const ramparts = utils.inflate(Memory.rooms[creep.room.name].structures)
+	.filter(s => s.structureType === STRUCTURE_RAMPART &&
+		!s.pos.lookFor(LOOK_CREEPS).length);
+
+	if (ramparts.length) {
+		const rampart = creep.pos.findClosestByRange(ramparts);
+	if (rampart) creep.moveTo(rampart);
+	}
+}

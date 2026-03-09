@@ -10,37 +10,71 @@ var roleUpgrader = {
         }
 
         if(creep.memory.working) {
-			const controller = creep.room.controller;
-			if (!controller.sign || controller.sign.username !== creep.owner.username) {
-				const signText = `${creep.room.name} Is property of _TXR`;
-				const signResult = creep.signController(controller, signText);
-				if (signResult === ERR_NOT_IN_RANGE) {
-				creep.moveTo(controller.pos, { maxRooms: 1 });
-				}
-				return;
-			}
-            if(creep.upgradeController(creep.room.controller) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(creep.room.controller, {visualizePathStyle: {stroke: '#ffffff'}});
-            }
+			creep.upgrade(creep)
         } else {
 			creep.getEnergyTargetOther();
         }
     },
+	spawn: function(room) {
+        let upgraderTarget = _.get(room.memory, ['census', 'upgrader'], 2);
 
-    spawn: function(room) {
-        var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role === 'upgrader' && creep.room.name === room.name);
-		console.log('Upgraders: ' + upgraders.length, room.name);
-		if(upgraders.length < 2) {
-            return true;
+        let upgraders = _.filter(
+            Game.creeps,
+            c => c.memory.role === 'upgrader' && c.room.name === room.name
+        );
+
+        const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'upgrader').length;
+
+        if (upgraders.length + queued < upgraderTarget) {
+            this.request(room);
         }
-        return false;
     },
 
-    spawnData: function(room) {
-        let name = 'Upgrader' + Game.time;
-        let body = [WORK, WORK, CARRY, MOVE];
-        let memory = {role: 'upgrader'};
-        return {name, body, memory};
+    request: function(room) {
+        room.memory.spawnQueue = room.memory.spawnQueue || [];
+
+        if(!room.memory.spawnQueue.find(r => r.role === 'upgrader')) {
+            room.memory.spawnQueue.push({
+                role: "upgrader",
+                priority: 5
+            });
+        }
+
+    },
+
+	getBody: function(room) {
+		let segment = [WORK, WORK, CARRY, MOVE];
+
+		let harvesters = _.filter(
+			Game.creeps,
+			c => c.memory.role === 'harvester' && c.room.name === room.name
+		);
+
+		let energyAvailable = harvesters.length ? room.energyCapacityAvailable : room.energyAvailable;
+
+		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
+
+		let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
+		maxSegments = Math.min(maxSegments, 16);
+
+		let body = [];
+		for (let i = 0; i < maxSegments; i++) {
+			body.push(...segment);
+		}
+
+		return body;
+	},
+
+
+    getSpawnData: function(room) {
+        return {
+            name: "Upgrader" + Game.time,
+            memory: {
+                role: "upgrader",
+                homeRoom: room.name,
+                working: false
+            }
+        };
     }
 };
 
