@@ -46,11 +46,11 @@ var harvester = {
     // returns an object with the data to spawn a new creep
     spawnData: function(room) {
             let name = 'Harvester' + Game.time;
-            let body = [WORK, CARRY, MOVE];
+            let body = [WORK, WORK, CARRY, MOVE];
             let memory = {role: 'harvester'};
         
             return {name, body, memory};
-    }
+    },
 };
 
 module.exports = harvester;

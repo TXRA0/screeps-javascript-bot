@@ -28,7 +28,7 @@ var porter = {
         }
 
         if(creep.memory.working) {
-			const target = creep.getEnergyHaulTarget();
+			const target = creep.getEnergyHaulTargetPorter();
 			if (target) {
 				if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
 					creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });

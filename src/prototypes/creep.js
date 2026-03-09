@@ -1,3 +1,60 @@
+
+const originalMoveTo = Creep.prototype.moveTo;
+Creep.prototype.moveTo = function(target, opts = {}) {
+	const newOpts = Object.assign({
+		reusePath: 10,
+		ignoreCreeps: false,
+		visualizePathStyle: { stroke: '#ffaa00' },
+		costCallback: (roomName, costMatrix) => {
+			const room = Game.rooms[roomName];
+			if (!room) return;
+
+			const terrain = room.getTerrain();
+
+			for (let x = 0; x < 50; x++) {
+				for (let y = 0; y < 50; y++) {
+					const tile = terrain.get(x, y);
+					if (tile === TERRAIN_MASK_WALL) {
+						costMatrix.set(x, y, 0xff); 
+					} else if (tile === TERRAIN_MASK_SWAMP) {
+						costMatrix.set(x, y, 5);    
+					} else {
+						costMatrix.set(x, y, 2);  
+					}
+				}
+			}
+
+			room.find(FIND_STRUCTURES).forEach(struct => {
+				if (struct.structureType === STRUCTURE_ROAD) {
+					costMatrix.set(struct.pos.x, struct.pos.y, 1);
+				} else if (
+					struct.structureType !== STRUCTURE_CONTAINER &&
+					(struct.structureType !== STRUCTURE_RAMPART || !struct.my)
+				) {
+					costMatrix.set(struct.pos.x, struct.pos.y, 0xff);
+				}
+			});
+
+			if (!opts.ignoreCreeps) {
+				room.find(FIND_CREEPS).forEach(c => {
+					if (c.id !== this.id) {
+						costMatrix.set(c.pos.x, c.pos.y, 0xff);
+					}
+				});
+				room.find(FIND_POWER_CREEPS).forEach(c => {
+					if (c.id !== this.id) {
+						costMatrix.set(c.pos.x, c.pos.y, 0xff);
+					}
+				});
+			}
+
+			return costMatrix;
+		}
+	}, opts);
+
+	return originalMoveTo.call(this, target, newOpts);
+};
+
 Creep.prototype.sayHello = function sayHello() {
     this.say("Hello", true);
 }
@@ -83,6 +140,51 @@ Creep.prototype.getEnergyHaulTarget = function() {
             STRUCTURE_STORAGE: 1,
             STRUCTURE_LAB: 3
         }
+    };
+
+	let allTargets = this.room.find(FIND_MY_STRUCTURES)
+		.filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+
+	let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
+	let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
+
+	if (essentialTargets.length > 0) {
+		essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+		return essentialTargets[0];
+	}
+
+	if (allTargets.length > 0) {
+		let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
+		let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
+		highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+
+		if (highPriorityTargets.length) {
+			return highPriorityTargets[0];
+		}
+	}
+
+	const upgraders = this.room.find(FIND_MY_CREEPS).filter(
+		c => c.memory.role === "upgrader" && c.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+	);
+
+	if (upgraders.length) {
+		return this.pos.findClosestByRange(upgraders);
+	}
+
+	return null;
+};
+
+Creep.prototype.getEnergyHaulTargetPorter = function() {
+    let roomState = 'normal';
+
+    let priorityTables = {
+        normal: {
+            STRUCTURE_SPAWN: 1,
+            STRUCTURE_EXTENSION: 1,
+            STRUCTURE_TOWER: 2,
+            STRUCTURE_CONTAINER: 3,
+            STRUCTURE_LAB: 4,
+        },
     };
 
     let allTargets = this.room.find(FIND_MY_STRUCTURES).filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -256,4 +358,35 @@ Creep.prototype.getEnergyTargetPorter = function (sourceContainers = null) {
     }
 	delete this.memory.energyTarget;
     return null;
+};
+Creep.prototype.upgrade = function (creep) {
+    const sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+    const controller = creep.room.controller;
+    if (!controller) return;
+
+    if (!controller.sign || controller.sign.username !== creep.owner.username) {
+        const signText = `${creep.room.name} Is property of _TXR`;
+        const signResult = creep.signController(controller, signText);
+        if (signResult === ERR_NOT_IN_RANGE) {
+            creep.moveTo(controller.pos, { maxRooms: 1 });
+        }
+        return;
+    }
+
+    // these bloody recursion loops break my CPU
+    if (!creep.memory._triedUpgrade) {
+        creep.memory._triedUpgrade = true;
+
+        if (controller.ticksToDowngrade > 500 && sites.length > 0) {
+            this.building(creep);
+            return;
+        }
+    }
+
+    const result = creep.upgradeController(controller);
+    if (result === ERR_NOT_IN_RANGE) {
+        creep.moveTo(controller.pos, { maxRooms: 1 });
+    }
+
+    creep.memory._triedUpgrade = false;
 };
