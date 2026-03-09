@@ -15,10 +15,11 @@ My profile is here: [**TXR**](https://screeps.com/a/#!/profile/_TXR)
 - Port over some of the best features of the other bot
 - Leave behind the shit the other bot had 
 
-##Roadmap — Future Features
+## Roadmap — Future Features
 - Develop a room manager for dynamic creep selection and spawn request management
 - Refactor the utilities module for smarter, more advanced logic
 - Implement a spawn queue with dynamic creep body generation
 - Enhance tower behavior and overall defense mechanisms
+
 
 
