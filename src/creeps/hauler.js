@@ -12,9 +12,17 @@ var hauler = {
         }
 
         if(creep.memory.working) {
+			const target = creep.getEnergyHaulTarget();
+			if (target) {
+				if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+					creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
+				}
+			} else {
+				creep.say('sleep', true);
+			}
         }
         else {
-			creep.harvestEnergy();
+			creep.getEnergyTarget();
         }
     },
     // checks if the room needs to spawn a creep
@@ -29,7 +37,7 @@ var hauler = {
     // returns an object with the data to spawn a new creep
     spawnData: function(room) {
             let name = 'Hauler' + Game.time;
-            let body = [WORK, CARRY, MOVE];
+            let body = [CARRY, MOVE];
 			let targetRoom = room
             let memory = {role: 'hauler', targetRoom: targetRoom};
         
@@ -37,4 +45,4 @@ var hauler = {
     }
 };
 
-module.exports = harvester;
+module.exports = hauler;

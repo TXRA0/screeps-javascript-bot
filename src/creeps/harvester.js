@@ -10,25 +10,29 @@ var harvester = {
             creep.memory.working = true;
             creep.say('🚧 filling');
         }
+		var haulers = _.filter(Game.creeps, (c) => c.memory.role == 'hauler' && c.room.name == creep.room.name);
+		if (!haulers.length) {
+			if(creep.memory.working) {
+				var targets = creep.room.find(FIND_MY_STRUCTURES);
+				targets = _.filter(targets, function(struct){
+					return (struct.structureType == STRUCTURE_TOWER || struct.structureType == STRUCTURE_EXTENSION || struct.structureType == STRUCTURE_SPAWN) && struct.store.getFreeCapacity(RESOURCE_ENERGY);
+				})
+				if(targets.length) {
+					let target = creep.pos.findClosestByRange(targets);
 
-        if(creep.memory.working) {
-            var targets = creep.room.find(FIND_MY_STRUCTURES);
-			targets = _.filter(targets, function(struct){
-				return (struct.structureType == STRUCTURE_TOWER || struct.structureType == STRUCTURE_EXTENSION || struct.structureType == STRUCTURE_SPAWN) && struct.store.getFreeCapacity(RESOURCE_ENERGY);
-			})
-            if(targets.length) {
-				let target = creep.pos.findClosestByRange(targets);
-
-				if(creep.pos.isNearTo(target)) {
-					creep.transfer(target, RESOURCE_ENERGY);
-				} else {
-					creep.moveTo(target);
+					if(creep.pos.isNearTo(target)) {
+						creep.transfer(target, RESOURCE_ENERGY);
+					} else {
+						creep.moveTo(target);
+					}
 				}
-            }
-        }
-        else {
-			creep.harvestEnergy();
-        }
+			}
+			else {
+				creep.harvestEnergy();
+			}
+		} else {
+			creep.harvestEnergyMiner();
+		}
     },
     // checks if the room needs to spawn a creep
     spawn: function(room) {

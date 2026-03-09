@@ -1,4 +1,5 @@
 function towerDefense(room) {
+	//list towers
     var towers = room.find(FIND_MY_STRUCTURES, {
 		filter: { structureType: STRUCTURE_TOWER }});
 	if(towers.length) {
@@ -16,5 +17,6 @@ function towerDefense(room) {
 		}) 
 	}
 }
+//change to work with defcon once added
 
 module.exports = towerDefense;
