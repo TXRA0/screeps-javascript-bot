@@ -27,7 +27,7 @@ var roleBuilder = {
     spawn: function(room) {
 		let builderTarget = _.get(room.memory, ['census', 'builder'], 2);
 		let builders = _.filter(Game.creeps, c => c.memory.role === 'builder' && c.room.name === room.name);
-
+		console.log('Builders: ' + builders.length, room.name);
 		let sites = room.find(FIND_CONSTRUCTION_SITES);
 
 		if (sites.length > 0 && builders.length < builderTarget) {
