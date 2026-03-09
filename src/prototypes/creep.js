@@ -62,50 +62,46 @@ Creep.prototype.harvestEnergyMiner = function harvestEnergyMiner() {
     }
 }
 
+Creep.prototype.getEnergyHaulTarget = function() {
+    let porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
+    let roomState = porterCreeps.length > 0 ? 'porter' : 'normal';
 
-//change to work with defcon once added
-Creep.prototype.getEnergyHaulTarget = function(roomState = "normal") {
-	let priorityTables = {
-		normal: {
-			STRUCTURE_SPAWN: 1,
-			STRUCTURE_EXTENSION: 1,
-			STRUCTURE_TOWER: 2,
-			STRUCTURE_CONTAINER: 3,
-			STRUCTURE_STORAGE: 4,
-			STRUCTURE_LAB: 5
-		},
-		underAttack: {
-			STRUCTURE_SPAWN: 1,
-			STRUCTURE_EXTENSION: 2,
-			STRUCTURE_TOWER: 1,
-			STRUCTURE_CONTAINER: 3,
-			STRUCTURE_STORAGE: 4,
-			STRUCTURE_LAB: 5
-		},
-		porter: {
-			STRUCTURE_SPAWN: 2,
-			STRUCTURE_EXTENSION: 2,
-			STRUCTURE_TOWER: 3,
-			STRUCTURE_CONTAINER: 2,
-			STRUCTURE_STORAGE: 1,
-			STRUCTURE_LAB: 3
-		}
-	};
-    const table = priorityTables[roomState] || priorityTables.normal;
+    let priorityTables = {
+        normal: {
+            STRUCTURE_SPAWN: 1,
+            STRUCTURE_EXTENSION: 1,
+            STRUCTURE_TOWER: 2,
+            STRUCTURE_CONTAINER: 3,
+            STRUCTURE_STORAGE: 4,
+            STRUCTURE_LAB: 5
+        },
+        porter: {
+            STRUCTURE_SPAWN: 2,
+            STRUCTURE_EXTENSION: 2,
+            STRUCTURE_TOWER: 3,
+            STRUCTURE_CONTAINER: 2,
+            STRUCTURE_STORAGE: 1,
+            STRUCTURE_LAB: 3
+        }
+    };
 
-    let targets = this.room.find(FIND_MY_STRUCTURES).filter(s => {
-        return s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-    });
+    let allTargets = this.room.find(FIND_MY_STRUCTURES).filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
-    if (targets.length === 0) return null;
+    if (allTargets.length === 0) return null;
 
-    targets.sort((a, b) => {
-        let priorityDiff = (table[a.structureType] || 99) - (table[b.structureType] || 99);
-        if (priorityDiff !== 0) return priorityDiff;
-        return this.pos.getRangeTo(a) - this.pos.getRangeTo(b);
-    });
+    let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
+    let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
 
-    return targets[0];
+    if (essentialTargets.length > 0) {
+        essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+        return essentialTargets[0];
+    }
+
+    let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
+    let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
+    highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+
+    return highPriorityTargets[0];
 };
 Creep.prototype.getEnergyTarget = function (sourceContainers = null) {
     let target = Game.getObjectById(this.memory.energyTarget);
@@ -222,5 +218,42 @@ Creep.prototype.getEnergyTargetOther = function (sourceContainers = null) {
     }
 
     delete this.memory.energyTarget;
+    return null;
+};
+
+Creep.prototype.getEnergyTargetPorter = function (sourceContainers = null) {
+    let target = Game.getObjectById(this.memory.energyTarget);
+    if (target) {
+        let hasEnergy = false;
+        if (target.store) {
+            hasEnergy = target.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
+        } else if (target.amount) {
+            hasEnergy = target.amount > 0;
+        }
+
+        if (hasEnergy) {
+            if (target.store) {
+                if (this.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                    this.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
+                }
+            } else {
+                if (this.pickup(target) === ERR_NOT_IN_RANGE) {
+                    this.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
+                }
+            }
+            return target;
+        } else {
+            delete this.memory.energyTarget;
+            target = null;
+        }
+    }
+	if (this.room.storage && this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        this.memory.energyTarget = this.room.storage.id;
+        if (this.withdraw(this.room.storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            this.moveTo(this.room.storage);
+        }
+        return this.room.storage;
+    }
+	delete this.memory.energyTarget;
     return null;
 };

@@ -10,11 +10,20 @@ var roleUpgrader = {
         }
 
         if(creep.memory.working) {
+			const controller = creep.room.controller;
+			if (!controller.sign || controller.sign.username !== creep.owner.username) {
+				const signText = `${creep.room.name} Is property of _TXR`;
+				const signResult = creep.signController(controller, signText);
+				if (signResult === ERR_NOT_IN_RANGE) {
+				creep.moveTo(controller.pos, { maxRooms: 1 });
+				}
+				return;
+			}
             if(creep.upgradeController(creep.room.controller) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(creep.room.controller, {visualizePathStyle: {stroke: '#ffffff'}});
             }
         } else {
-			creep.getEnergyTarget();
+			creep.getEnergyTargetOther();
         }
     },
 

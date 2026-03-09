@@ -20,7 +20,7 @@ var roleBuilder = {
             }
         }
         else {
-			creep.getEnergyTarget();
+			creep.getEnergyTargetOther();
         }
     },
     // checks if the room needs to spawn a creep
