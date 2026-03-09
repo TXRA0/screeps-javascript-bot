@@ -7,11 +7,11 @@ Designed to work in any room, though currently only tested by myself.
 My profile is here: [**TXR**](https://screeps.com/a/#!/profile/_TXR)
 
 ---
-##Current Version — 0.91: All good things come to an end
--Lack of good defense/defcon code resulted in my death
--Defenders were stupid - didn't prioritise creeps ATTACKING my spawn
+## Current Version — 0.91: All good things come to an end
+- Lack of good defense/defcon code resulted in my death
+- Defenders were stupid - didn't prioritise creeps ATTACKING my spawn
 
-##Next Version — 0.95
+## Next Version — 0.95
 Strengthen defensive logic across all rooms
 Trigger Safe Mode only when absolutely necessary
 Refine DEFCON evaluation based on enemy creep capability, not just quantity
@@ -21,7 +21,7 @@ Factor in enemy healing and damage potential when calculating defender requireme
 If towers and defenders cannot outpace enemy healing or damage—regardless of repair support, activate safe mode
 possibly refactor the whole DEFCON system, allow for dynamic defenders such as ATTACK and RANGED_ATTACK working together
 
-##Next Version — 1.0: !!!
+## Next Version — 1.0: !!!
 Boost making and lab technicians
 Upgrader boosting and general creep boosting for efficiency
 Smarter market manager
@@ -32,3 +32,4 @@ Develop a room manager for dynamic creep selection and spawn request management
 Refactor the utilities module for smarter, more advanced logic
 Implement a spawn queue with dynamic creep body generation
 Enhance tower behavior and overall defense mechanisms
+
