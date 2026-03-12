@@ -122,7 +122,22 @@ Creep.prototype.harvestEnergyMiner = function harvestEnergyMiner() {
         }
     }
 }
+Creep.prototype.harvestEnergyPioneer = function harvestEnergyPioneer() {
+    let storedSource = Game.getObjectById(this.memory.sourceId);
 
+    if (!storedSource) {
+        delete this.memory.sourceId;
+        storedSource = this.findEnergySourceMiner();
+    }
+
+    if (storedSource) {
+        if (this.pos.isNearTo(storedSource)) {
+            this.harvest(storedSource);
+        } else {
+            this.moveTo(storedSource);
+        }
+    }
+}
 Creep.prototype.getEnergyHaulTarget = function() {
     let porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
     let roomState = porterCreeps.length > 0 ? 'porter' : 'normal';

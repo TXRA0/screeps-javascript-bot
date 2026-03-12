@@ -66,36 +66,37 @@ function getSpawnPriority(role) {
 
     return priorities[role] || 10;
 }
-
 function spawnCreeps(room) {
-    if (!Memory.rooms || !Memory.rooms[room.name] || !Memory.rooms[room.name].spawnQueue || !Memory.rooms[room.name].spawnQueue.length) {
-        return;
-    }
+	if (!Memory.rooms || !Memory.rooms[room.name] || !Memory.rooms[room.name].spawnQueue || !Memory.rooms[room.name].spawnQueue.length) {
+		return;
+	}
 
-    let spawn = room.find(FIND_MY_SPAWNS)[0];
-    if (!spawn || spawn.spawning) return;
+	let spawns = room.find(FIND_MY_SPAWNS);
 
-    let queue = Memory.rooms[room.name].spawnQueue;
+	_.forEach(spawns, spawn => {
+		if (!spawn || spawn.spawning) return;
 
-    queue = _.sortBy(queue, "priority");
+		Memory.rooms[room.name].spawnQueue = _.sortBy(Memory.rooms[room.name].spawnQueue, "priority");
+		let queue = Memory.rooms[room.name].spawnQueue;
 
-    let request = queue[0];
-    if (!request) return;
+		let request = queue[0];
+		if (!request) return;
 
-    let body = creepLogic[request.role].getBody(room);
-    let creepSpawnData = creepLogic[request.role].getSpawnData(room);
+		let body = creepLogic[request.role].getBody(room);
+		let creepSpawnData = creepLogic[request.role].getSpawnData(room);
 
-    let result = spawn.spawnCreep(
-        body,
-        creepSpawnData.name,
-        { memory: creepSpawnData.memory }
-    );
+		let result = spawn.spawnCreep(
+			body,
+			creepSpawnData.name,
+			{ memory: creepSpawnData.memory }
+		);
 
-    console.log(`Tried to spawn ${request.role}:`, result, JSON.stringify(body));
+		console.log(`${spawn.name} tried to spawn ${request.role}:`, result, JSON.stringify(body));
 
-    if (result === OK) {
-        Memory.rooms[room.name].spawnQueue.shift();
-    }
+		if (result === OK) {
+			Memory.rooms[room.name].spawnQueue.shift();
+		}
+	});
 }
 
 function runSpawner(room) {

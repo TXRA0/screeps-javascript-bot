@@ -9,6 +9,7 @@ let creepLogic = {
 	healer: require('./healer'),
 	ranger: require('./ranger'),
 	claimer: require('./claimer'),
+	pioneer: require('./pioneer'),
 }
 
 module.exports = creepLogic;
