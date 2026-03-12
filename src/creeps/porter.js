@@ -42,7 +42,7 @@ var porter = {
         }
     },
     spawn: function(room) {
-		if (room && room.controller && room.controller.level < 4 && !room.storage) {
+		if (!room.storage) {
 			return;
 		}
         const porters = _.filter(
