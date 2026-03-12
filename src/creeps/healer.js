@@ -1,4 +1,4 @@
-var roleBuilder = {
+var healer = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
@@ -6,8 +6,14 @@ var roleBuilder = {
     },
 
     spawn: function(room) {
-        let healerTarget = 1
-		let flag = Game.flags.trio
+        let healerTarget = 0
+		let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
+
+		if (!flag) return;
+
+		let flagRoomName = flag.name.split("_")[1];
+		
+		if (room.name !== flagRoomName) return;
 
         let healers = _.filter(
             Game.creeps,
@@ -69,4 +75,4 @@ var roleBuilder = {
     }
 };
 
-module.exports = roleBuilder;
+module.exports = healer;

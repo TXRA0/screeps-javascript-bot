@@ -1,4 +1,4 @@
-var roleBuilder = {
+var berserker = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
@@ -6,8 +6,14 @@ var roleBuilder = {
     },
 
     spawn: function(room) {
-        let berserkerTarget = 1
-		let flag = Game.flags.trio
+        let berserkerTarget = 0
+		let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
+
+		if (!flag) return;
+
+		let flagRoomName = flag.name.split("_")[1];
+		
+		if (room.name !== flagRoomName) return;
 
         let berserkers = _.filter(
             Game.creeps,
@@ -69,4 +75,4 @@ var roleBuilder = {
     }
 };
 
-module.exports = roleBuilder;
+module.exports = berserker;

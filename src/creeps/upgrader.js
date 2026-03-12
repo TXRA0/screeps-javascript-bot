@@ -16,7 +16,7 @@ var roleUpgrader = {
         }
     },
 	spawn: function(room) {
-        let upgraderTarget = _.get(room.memory, ['census', 'upgrader'], 2);
+        let upgraderTarget = _.get(room.memory, ['census', 'upgrader'], 1);
 
         let upgraders = _.filter(
             Game.creeps,

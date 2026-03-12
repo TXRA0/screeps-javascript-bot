@@ -2,7 +2,30 @@ let prototypes = require('./prototypes');
 let creepLogic = require('./creeps');
 let roomLogic = require('./room');
 
+let lastMemoryTick
+let lastMemory
+
+function tryInitSameMemory() {
+	const startCPU = Game.cpu.getUsed()
+	let reused = false
+
+	if (lastMemoryTick && lastMemory && Game.time === lastMemoryTick + 1) {
+		delete global.Memory
+		global.Memory = lastMemory
+		RawMemory._parsed = lastMemory
+		reused = true
+	} else {
+		Memory
+		lastMemory = RawMemory._parsed
+	}
+
+	lastMemoryTick = Game.time
+	const endCPU = Game.cpu.getUsed()
+	console.log(`[MemHack] CPU: ${(endCPU - startCPU).toFixed(3)} | Reused: ${reused}`)
+}
+
 module.exports.loop = function () {
+	tryInitSameMemory()
     // make a list of all of our rooms
     Game.myRooms = _.filter(Game.rooms, r => r.controller && r.controller.level > 0 && r.controller.my);
 

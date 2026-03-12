@@ -88,6 +88,26 @@ Creep.prototype.findEnergySourceMiner = function() {
 
     return null;
 };
+Creep.prototype.findEnergySourcePioneer = function() {
+    const sources = this.room.find(FIND_SOURCES);
+
+    const usedSources = _.map(
+        _.filter(Game.creeps, c => c.memory.role === 'harvester' && c.memory.sourceId),
+        c => c.memory.sourceId
+    );
+
+    const freeSource = _.find(sources, s =>
+        !usedSources.includes(s.id) &&
+        s.energy > 0
+    );
+
+    if (freeSource) {
+        this.memory.sourceId = freeSource.id;
+        return freeSource;
+    }
+
+    return null;
+};
 Creep.prototype.moveToRoom = function moveToRoom(roomName) {
 	this.moveTo(new RoomPosition(25, 25, roomName));
 }
@@ -127,7 +147,7 @@ Creep.prototype.harvestEnergyPioneer = function harvestEnergyPioneer() {
 
     if (!storedSource) {
         delete this.memory.sourceId;
-        storedSource = this.findEnergySourceMiner();
+        storedSource = this.findEnergySourcePioneer();
     }
 
     if (storedSource) {

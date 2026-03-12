@@ -1,25 +1,31 @@
-var roleBuilder = {
+var ranger = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
 		creep.ranger()
     },
 
-    // decides if we need builders
-    spawn: function(room) {
-        let rangerTarget = 1
-		let flag = Game.flags.trio
+	spawn: function(room) {
+		let rangerTarget = 1;
+		let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 
-        let rangers = _.filter(
-            Game.creeps,
-            c => c.memory.role === 'ranger' && c.memory.homeRoom === room.name
-        );
+		if (!flag) return;
+
+		let flagRoomName = flag.name.split("_")[1];
+		
+		if (room.name !== flagRoomName) return;
+
+		let rangers = _.filter(
+			Game.creeps,
+			c => c.memory.role === 'ranger' && c.memory.homeRoom === room.name
+		);
+
 		const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'ranger').length;
 
-        if (rangers.length + queued < rangerTarget && flag) {
-            this.request(room);
-        }
-    },
+		if (rangers.length + queued < rangerTarget) {
+			this.request(room);
+		}
+	},
 
     request: function(room) {
 
@@ -70,4 +76,4 @@ var roleBuilder = {
     }
 };
 
-module.exports = roleBuilder;
+module.exports = ranger;
