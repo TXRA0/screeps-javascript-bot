@@ -29,6 +29,8 @@ var roleUpgrader = {
 			upgraderTarget = 1;
 		} else if (stored < 100000) {
 			upgraderTarget = 2;
+		} else {
+			upgraderTarget = 3;
 		}
         let upgraders = _.filter(
             Game.creeps,
