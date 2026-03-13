@@ -10,6 +10,7 @@ let creepLogic = {
 	ranger: require('./ranger'),
 	claimer: require('./claimer'),
 	pioneer: require('./pioneer'),
+	defender: require('./defender'),
 }
 
 module.exports = creepLogic;

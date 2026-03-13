@@ -471,7 +471,7 @@ Creep.prototype.defend = function() {
 	.some(s => s.structureType === STRUCTURE_RAMPART);
 	if (onRampart) return;
 
-	const ramparts = utils.inflate(Memory.rooms[this.room.name].structures)
+	const ramparts = this.room.find(FIND_MY_STRUCTURES)
 	.filter(s => s.structureType === STRUCTURE_RAMPART &&
 		!s.pos.lookFor(LOOK_CREEPS).length);
 
