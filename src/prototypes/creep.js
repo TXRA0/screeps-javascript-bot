@@ -481,7 +481,8 @@ Creep.prototype.defend = function() {
 	}
 }
 Creep.prototype.ranger = function() {
-	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
+	let flag = Game.flags[`trio_${this.memory.homeRoom}`];
+	
 	if (!flag) {
 		this.say("huh");
 		return;
@@ -553,8 +554,13 @@ Creep.prototype.ranger = function() {
 				if (target) break;
 			}
 		}
-
+		if (hasRanged && target && this.pos.inRangeTo(target, 3)) {
+			this.rangedAttack(target);
+			this.say("pew!", true);
+		}
 		if (hasRanged && target) {
+			this.rangedAttack(target);
+			this.say("pew!", true);
 			if (this.pos.inRangeTo(target, 1)) {
 				this.rangedAttack(target);
 				this.say("pew!", true);
@@ -614,7 +620,7 @@ Creep.prototype.isPositionWalkable = function(pos) {
 	return true;
 }
 Creep.prototype.healer = function() {
-	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
+	let flag = Game.flags[`trio_${this.memory.homeRoom}`];
 	if (!flag) {
 		this.say("huh");
 		return;
@@ -682,7 +688,7 @@ Creep.prototype.healer = function() {
 }
 
 Creep.prototype.berserker = function() {
-	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
+	let flag = Game.flags[`trio_${this.memory.homeRoom}`];
 	if (!flag) {
 		this.say("huh");
 		return;
