@@ -6,7 +6,7 @@ var berserker = {
     },
 
     spawn: function(room) {
-        let berserkerTarget = 0
+        let berserkerTarget = 1
 		let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 
 		if (!flag) return;

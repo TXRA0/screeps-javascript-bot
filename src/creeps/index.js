@@ -11,6 +11,9 @@ let creepLogic = {
 	claimer: require('./claimer'),
 	pioneer: require('./pioneer'),
 	defender: require('./defender'),
+	remoteHarvester: require('./remoteHarvester'),
+	remoteHauler: require('./remoteHauler'),
+	reserver: require('./reserver'),
 }
 
 module.exports = creepLogic;

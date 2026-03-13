@@ -822,3 +822,31 @@ Creep.prototype.pioneer = function() {
 		}
     }
 };
+Creep.prototype.reserve = function() {
+    const flag = Game.flags[`remoteRoom_${this.memory.homeRoom}`];
+    if (!flag) {
+        this.say("huh");
+        return;
+    }
+    if (this.pos.roomName !== flag.pos.roomName) {
+        this.moveTo(flag, {
+            visualizePathStyle: { stroke: '#ffaa00' },
+            reusePath: 50
+        });
+        return;
+    }
+
+    const controller = this.room.controller;
+    if (!controller) return;
+
+    const result = this.reserveController(controller);
+
+    if (result === ERR_NOT_IN_RANGE) {
+        this.moveTo(controller, { reusePath: 50 });
+        return;
+    }
+
+    if (result < 0) {
+        this.say(result.toString());
+    }
+};

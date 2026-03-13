@@ -6,7 +6,7 @@ var healer = {
     },
 
     spawn: function(room) {
-        let healerTarget = 0
+        let healerTarget = 1
 		let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 
 		if (!flag) return;
