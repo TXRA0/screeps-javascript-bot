@@ -7,7 +7,13 @@ var claimer = {
     spawn: function(room) {
         var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.homeRoom == room.name);
 		const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'claimer').length;
-		var flag = Game.flags.claimRoom
+		let flag = _.find(Game.flags, f => f.name.startsWith("claimRoom_"));
+
+		if (!flag) return;
+
+		let flagRoomName = flag.name.split("_")[1];
+		
+		if (room.name !== flagRoomName) return;
 
         if (claimers.length + queued < 1 && flag) {
             this.request(room);

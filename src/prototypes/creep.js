@@ -422,6 +422,7 @@ Creep.prototype.upgrade = function () {
 	}
 };
 Creep.prototype.building = function() {
+	var controller = this.room.controller
 	const sites = this.room.find(FIND_CONSTRUCTION_SITES);
 	if (!sites.length) {
 		if (this.memory.role === "builder" && !this.memory._triedUpgrade) {
@@ -480,7 +481,7 @@ Creep.prototype.defend = function() {
 	}
 }
 Creep.prototype.ranger = function() {
-	const flag = Game.flags.trio;
+	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 	if (!flag) {
 		this.say("huh");
 		return;
@@ -613,7 +614,7 @@ Creep.prototype.isPositionWalkable = function(pos) {
 	return true;
 }
 Creep.prototype.healer = function() {
-	const flag = Game.flags.trio;
+	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 	if (!flag) {
 		this.say("huh");
 		return;
@@ -681,7 +682,7 @@ Creep.prototype.healer = function() {
 }
 
 Creep.prototype.berserker = function() {
-	const flag = Game.flags.trio;
+	let flag = _.find(Game.flags, f => f.name.startsWith("trio_"));
 	if (!flag) {
 		this.say("huh");
 		return;
@@ -749,7 +750,7 @@ Creep.prototype.wallBuild = function() {
     }
 }
 Creep.prototype.claim = function() {
-    const flag = Game.flags.claimRoom;
+    let flag = _.find(Game.flags, f => f.name.startsWith("claimRoom_"));
     if (!flag) {
         this.say("huh");
         return;
@@ -777,5 +778,41 @@ Creep.prototype.claim = function() {
         this.signController(controller, `${this.room.name} is property of _TXR`);
     } else {
         this.say(result);
+    }
+};
+Creep.prototype.pioneer = function() {
+    const controller = this.room.controller;
+    if (!controller) return;
+
+    if (this.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+        this.building();
+        return;
+    }
+
+    if (controller.level < 2) {
+        this.upgrade();
+        return;
+    }
+
+    if (controller.level >= 2) {
+		let target = Game.getObjectById(this.memory.target);
+
+		if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+			target = this.getEnergyHaulTarget();
+
+			if (target) {
+				this.memory.target = target.id;
+			} else {
+				this.memory.target = null;
+			}
+		}
+
+		if (target) {
+			if (this.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+				this.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
+			}
+		} else {
+			this.say('sleep', true);
+		}
     }
 };

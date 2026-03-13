@@ -1,6 +1,6 @@
 var pioneer = {
 	run: function (/** @type {any} */ creep, /** @type {any} */  /** @type {{ pioneer: (arg0: any) => void; }} */ toolbox, /** @type {any} */ ) {
-		var flag = Game.flags.supportRoom
+		let flag = _.find(Game.flags, f => f.name.startsWith("supportRoom_"));
 		if (!flag) {
 			creep.say("huh")
 			return;
@@ -21,13 +21,20 @@ var pioneer = {
 		}
 		if (creep.memory.working == false) {
 			creep.harvestEnergyPioneer()
+			creep.findEnergySourcePioneer()
 		} else if (creep.memory.working == true) {
-			creep.building()
+			creep.pioneer()
 		}
 	},
 	spawn: function(room) {
         let pioneerTarget = 3
-		let flag = Game.flags.supportRoom
+		let flag = _.find(Game.flags, f => f.name.startsWith("supportRoom_"));
+
+		if (!flag) return;
+
+		let flagRoomName = flag.name.split("_")[1];
+		
+		if (room.name !== flagRoomName) return;
 
         let pioneers = _.filter(
             Game.creeps,

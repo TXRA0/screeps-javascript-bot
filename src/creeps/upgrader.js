@@ -16,8 +16,20 @@ var roleUpgrader = {
         }
     },
 	spawn: function(room) {
-        let upgraderTarget = _.get(room.memory, ['census', 'upgrader'], 1);
+		let upgraderTarget = 1;
 
+		let stored = 0;
+		if (room.storage && room.storage.store && room.storage.store[RESOURCE_ENERGY]) {
+			stored = room.storage.store[RESOURCE_ENERGY];
+		}
+
+		if (room.controller.level < 4) {
+			upgraderTarget = 3;
+		} else if (stored < 50000) {
+			upgraderTarget = 1;
+		} else if (stored < 100000) {
+			upgraderTarget = 2;
+		}
         let upgraders = _.filter(
             Game.creeps,
             c => c.memory.role === 'upgrader' && c.room.name === room.name
