@@ -88,11 +88,11 @@ Creep.prototype.findEnergySourceMiner = function() {
 
     return null;
 };
-Creep.prototype.findEnergySourcePioneer = function() {
+Creep.prototype.findEnergySourceRemoteMiner = function() {
     const sources = this.room.find(FIND_SOURCES);
 
     const usedSources = _.map(
-        _.filter(Game.creeps, c => c.memory.role === 'harvester' && c.memory.sourceId),
+        _.filter(Game.creeps, c => c.memory.role === 'remoteHarvester' && c.memory.sourceId),
         c => c.memory.sourceId
     );
 
@@ -100,6 +100,25 @@ Creep.prototype.findEnergySourcePioneer = function() {
         !usedSources.includes(s.id) &&
         s.energy > 0
     );
+
+    if (freeSource) {
+        this.memory.sourceId = freeSource.id;
+        return freeSource;
+    }
+
+    return null;
+};
+Creep.prototype.findEnergySourceMiner = function() {
+    const sources = this.room.find(FIND_SOURCES);
+
+    // Get all sourceIds currently used by harvesters
+    const usedSources = _.map(
+        _.filter(Game.creeps, c => c.memory.role === 'harvester' && c.memory.sourceId),
+        c => c.memory.sourceId
+    );
+
+    // Find a source not already assigned
+    const freeSource = _.find(sources, s => !usedSources.includes(s.id));
 
     if (freeSource) {
         this.memory.sourceId = freeSource.id;
@@ -132,6 +151,22 @@ Creep.prototype.harvestEnergyMiner = function harvestEnergyMiner() {
     if (!storedSource) {
         delete this.memory.sourceId;
         storedSource = this.findEnergySourceMiner();
+    }
+
+    if (storedSource) {
+        if (this.pos.isNearTo(storedSource)) {
+            this.harvest(storedSource);
+        } else {
+            this.moveTo(storedSource);
+        }
+    }
+}
+Creep.prototype.harvestEnergyRemoteMiner = function harvestEnergyRemoteMiner() {
+    let storedSource = Game.getObjectById(this.memory.sourceId);
+
+    if (!storedSource) {
+        delete this.memory.sourceId;
+        storedSource = this.findEnergySourceRemoteMiner();
     }
 
     if (storedSource) {

@@ -19,17 +19,23 @@ var remoteHarvester = {
 			return;
 		}
 
-		creep.harvestEnergyMiner();
+		creep.harvestEnergyRemoteMiner();
 	},
 	spawn: function(room) {
-		let harvesterTarget = 2; //scouting should take into account room source amount
 		let flag = _.find(Game.flags, f => f.name.startsWith("remoteRoom_"));
-
 		if (!flag) return;
 
 		let flagRoomName = flag.name.split("_")[1];
-		
 		if (room.name !== flagRoomName) return;
+
+		let remoteRoom = Game.rooms[flag.pos.roomName];
+		let harvesterTarget;
+
+		if (!remoteRoom) {
+			harvesterTarget = 1;
+		} else {
+			harvesterTarget = remoteRoom.find(FIND_SOURCES).length;
+		}
 
 		let harvesters = _.filter(
 			Game.creeps,

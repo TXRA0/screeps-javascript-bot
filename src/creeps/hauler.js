@@ -70,13 +70,8 @@ var hauler = {
 			Game.creeps,
 			c => c.memory.role === 'harvester' && c.room.name === room.name
 		);
-		let haulers = _.filter(
-			Game.creeps,
-			c => c.memory.role === 'hauler' && c.room.name === room.name
-		);
 
 		let energyAvailable = harvesters.length ? room.energyCapacityAvailable : room.energyAvailable;
-		energyAvailable = haulers.length ? room.energyCapacityAvailable : room.energyAvailable;
 
 		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
 
