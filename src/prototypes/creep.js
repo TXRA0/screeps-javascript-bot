@@ -127,9 +127,16 @@ Creep.prototype.findEnergySourceMiner = function() {
 
     return null;
 };
-Creep.prototype.moveToRoom = function moveToRoom(roomName) {
-	this.moveTo(new RoomPosition(25, 25, roomName));
+Creep.prototype.moveToRoom = function(roomName) {
+    if (!roomName || typeof roomName !== "string") {
+        console.log("moveToRoom called with invalid roomName:", roomName);
+        this.say("no room", true);
+        return;
+    }
+    this.moveTo(new RoomPosition(25, 25, roomName));
 }
+
+
 Creep.prototype.harvestEnergy = function harvestEnergy() {
 	let storedSource = Game.getObjectById(this.memory.source);
 	
@@ -193,60 +200,36 @@ Creep.prototype.harvestEnergyPioneer = function harvestEnergyPioneer() {
         }
     }
 }
-Creep.prototype.getEnergyHaulTarget = function() {
+Creep.prototype.getEnergyHaulTarget = function(isRemote = false) {
     let porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
-    let roomState = porterCreeps.length > 0 ? 'porter' : 'normal';
+    let roomState = porterCreeps.length > 0 || isRemote ? 'porter' : 'normal';
 
     let priorityTables = {
-        normal: {
-            STRUCTURE_SPAWN: 1,
-            STRUCTURE_EXTENSION: 1,
-            STRUCTURE_TOWER: 2,
-            STRUCTURE_CONTAINER: 3,
-            STRUCTURE_STORAGE: 4,
-            STRUCTURE_LAB: 5
-        },
-        porter: {
-            STRUCTURE_SPAWN: 2,
-            STRUCTURE_EXTENSION: 2,
-            STRUCTURE_TOWER: 3,
-            STRUCTURE_CONTAINER: 2,
-            STRUCTURE_STORAGE: 1,
-            STRUCTURE_LAB: 3
-        }
+        normal: { STRUCTURE_SPAWN: 1, STRUCTURE_EXTENSION: 1, STRUCTURE_TOWER: 2, STRUCTURE_CONTAINER: 3, STRUCTURE_STORAGE: 4, STRUCTURE_LAB: 5 },
+        porter: { STRUCTURE_SPAWN: 2, STRUCTURE_EXTENSION: 2, STRUCTURE_TOWER: 3, STRUCTURE_CONTAINER: 2, STRUCTURE_STORAGE: 1, STRUCTURE_LAB: 3 }
     };
 
-	let allTargets = this.room.find(FIND_MY_STRUCTURES)
-		.filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    let allTargets = this.room.find(FIND_MY_STRUCTURES)
+        .filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
-	let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
-	let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
+    let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
+    let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
 
-	if (essentialTargets.length > 0) {
-		essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
-		return essentialTargets[0];
-	}
+    if (essentialTargets.length > 0 && !isRemote) {
+        essentialTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
+        return essentialTargets[0];
+    }
 
-	if (allTargets.length > 0) {
-		let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
-		let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
-		highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+    if (allTargets.length > 0) {
+        let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
+        let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
+        highPriorityTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
+        if (highPriorityTargets.length) return highPriorityTargets[0];
+    }
 
-		if (highPriorityTargets.length) {
-			return highPriorityTargets[0];
-		}
-	}
-
-	const upgraders = this.room.find(FIND_MY_CREEPS).filter(
-		c => c.memory.role === "upgrader" && c.store.getUsedCapacity(RESOURCE_ENERGY) == 0 
-	);
-
-	if (upgraders.length) {
-		return this.pos.findClosestByRange(upgraders);
-	}
-
-	return null;
+    return null;
 };
+
 
 Creep.prototype.getEnergyHaulTargetPorter = function() {
     let roomState = 'normal';
@@ -279,6 +262,62 @@ Creep.prototype.getEnergyHaulTargetPorter = function() {
 
     return highPriorityTargets[0];
 };
+Creep.prototype.getEnergyHaulTargetRemote = function() {
+    if (!this.room) return null;
+
+    if (this.room.storage && this.room.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        return this.room.storage;
+    }
+
+    let porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
+    let roomState = porterCreeps.length > 0 ? 'porter' : 'normal';
+
+    let priorityTables = {
+        normal: {
+            STRUCTURE_SPAWN: 1,
+            STRUCTURE_EXTENSION: 1,
+            STRUCTURE_TOWER: 2,
+            STRUCTURE_CONTAINER: 3,
+            STRUCTURE_STORAGE: 4,
+            STRUCTURE_LAB: 5
+        },
+        porter: {
+            STRUCTURE_SPAWN: 2,
+            STRUCTURE_EXTENSION: 2,
+            STRUCTURE_TOWER: 3,
+            STRUCTURE_CONTAINER: 2,
+            STRUCTURE_STORAGE: 1,
+            STRUCTURE_LAB: 3
+        }
+    };
+
+    let allTargets = this.room.find(FIND_MY_STRUCTURES)
+        .filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+
+    if (allTargets.length === 0) return null;
+
+    let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
+    let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
+
+    if (essentialTargets.length > 0) {
+        essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+        return essentialTargets[0];
+    }
+
+    let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
+    let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
+    highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+
+    if (highPriorityTargets.length) return highPriorityTargets[0];
+
+    const upgraders = this.room.find(FIND_MY_CREEPS)
+        .filter(c => c.memory.role === "upgrader" && c.store.getUsedCapacity(RESOURCE_ENERGY) === 0);
+
+    if (upgraders.length) return this.pos.findClosestByRange(upgraders);
+
+    return null;
+};
+
 Creep.prototype.getEnergyTarget = function (sourceContainers = null) {
     let target = Game.getObjectById(this.memory.energyTarget);
     if (target) {
@@ -858,16 +897,8 @@ Creep.prototype.pioneer = function() {
     }
 };
 Creep.prototype.reserve = function() {
-    const flag = Game.flags[`remoteRoom_${this.memory.homeRoom}`];
-    if (!flag) {
-        this.say("huh");
-        return;
-    }
-    if (this.pos.roomName !== flag.pos.roomName) {
-        this.moveTo(flag, {
-            visualizePathStyle: { stroke: '#ffaa00' },
-            reusePath: 50
-        });
+    if (this.room.name !== this.memory.remoteRoom) {
+        this.moveToRoom(this.memory.remoteRoom);
         return;
     }
 

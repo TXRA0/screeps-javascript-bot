@@ -1,22 +1,9 @@
 var remoteDefender = {
 
-    /** @param {Creep} creep **/
     run: function(creep) {
-        let flag = Game.flags["remoteRoom_" + creep.memory.homeRoom];
 
-        if (!flag) {
-            creep.say("huh");
-            return;
-        }
-
-        if (creep.pos.roomName !== flag.pos.roomName) {
-            creep.moveTo(flag, {
-                visualizePathStyle: { stroke: '#ffaa00' },
-                reusePath: 50,
-                maxOps: 5000,
-                maxRooms: 16,
-                range: 1
-            });
+        if (creep.room.name !== creep.memory.remoteRoom) {
+            creep.moveToRoom(creep.memory.remoteRoom);
             return;
         }
 
@@ -27,53 +14,7 @@ var remoteDefender = {
             }
             return;
         }
-
-        creep.moveTo(flag, { range: 1 });
     },
-
-	spawn: function(room) {
-		let defenderAmount;
-		let flag = _.find(Game.flags, f => f.name.startsWith("remoteRoom_"));
-
-		if (!flag) return;
-
-		let spawningRoomName = flag.name.split("_")[1];
-
-		if (room.name !== spawningRoomName) return;
-
-		let remoteRoomName = flag.pos.roomName;
-		let remoteRoom = Game.rooms[remoteRoomName];
-		if (!remoteRoom) return;
-
-		let hostiles = remoteRoom.find(FIND_HOSTILE_CREEPS);
-
-		if (hostiles.length) {
-			defenderAmount = hostiles.length < 3 ? 1 : 2;
-		} else {
-			return;
-		}
-
-		let defenders = _.filter(
-			Game.creeps,
-			c => c.memory.role === 'remoteDefender' && c.memory.homeRoom === room.name
-		);
-
-		const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'remoteDefender').length;
-
-		if (defenders.length + queued < defenderAmount) {
-			this.request(room);
-		}
-	},
-
-    request: function(room) {
-        room.memory.spawnQueue = room.memory.spawnQueue || [];
-
-        room.memory.spawnQueue.push({
-            role: "remoteDefender",
-            priority: 3
-        });
-    },
-
     getBody: function(room) {
         let segment = [ATTACK, MOVE];
         let segmentCost = BODYPART_COST[ATTACK] + BODYPART_COST[MOVE];

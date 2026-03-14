@@ -1,13 +1,6 @@
 var remoteHauler = {
 
-    /** @param {Creep} creep **/
     run: function(creep) {
-
-        const flag = Game.flags[`remoteRoom_${creep.memory.homeRoom}`];
-        if (!flag) {
-            creep.say("huh");
-            return;
-        }
 
         if (creep.memory.working && creep.store[RESOURCE_ENERGY] === 0) {
             creep.memory.working = false;
@@ -29,7 +22,8 @@ var remoteHauler = {
             let target = Game.getObjectById(creep.memory.target);
 
             if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-                target = creep.getEnergyHaulTarget();
+
+                target = creep.getEnergyHaulTargetRemote();
 
                 if (target) {
                     creep.memory.target = target.id;
@@ -40,58 +34,18 @@ var remoteHauler = {
 
             if (target) {
                 if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
+                    creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
                 }
             }
 
-        }
+        } else {
 
-        else {
-
-            if (creep.pos.roomName !== flag.pos.roomName) {
-                creep.moveTo(flag, {
-                    reusePath: 50,
-                    maxOps: 5000,
-                    maxRooms: 16
-                });
+            if (creep.room.name !== creep.memory.remoteRoom) {
+                creep.moveToRoom(creep.memory.remoteRoom);
                 return;
             }
 
             creep.getEnergyTarget();
-        }
-    },
-
-    spawn: function(room) {
-
-        let flag = Game.flags[`remoteRoom_${room.name}`];
-        if (!flag) return;
-
-        let haulers = _.filter(
-            Game.creeps,
-            c => c.memory.role === 'remoteHauler' && c.memory.homeRoom === room.name
-        );
-
-        const queued = _.filter(
-            room.memory.spawnQueue || [],
-            r => r.role === 'remoteHauler'
-        ).length;
-
-        const neededHaulers = this.calculateNeededHaulers(room);
-
-        if (haulers.length + queued < neededHaulers) {
-            this.request(room);
-        }
-    },
-
-    request: function(room) {
-
-        room.memory.spawnQueue = room.memory.spawnQueue || [];
-
-        if (!room.memory.spawnQueue.find(r => r.role === 'remoteHauler')) {
-            room.memory.spawnQueue.push({
-                role: "remoteHauler",
-                priority: 5
-            });
         }
     },
 
@@ -129,47 +83,6 @@ var remoteHauler = {
                 working: false
             }
         };
-    },
-
-    calculateNeededHaulers: function(room) {
-
-        const spawn = room.find(FIND_MY_SPAWNS)[0];
-        if (!spawn) return 0;
-
-        const flag = Game.flags[`remoteRoom_${room.name}`];
-        if (!flag) return 0;
-
-        let totalCarryPartsNeeded = 0;
-
-        const remoteRoom = Game.rooms[flag.pos.roomName];
-        if (!remoteRoom) return 1;
-
-        remoteRoom.find(FIND_SOURCES).forEach(source => {
-
-            const path = PathFinder.search(
-                spawn.pos,
-                { pos: source.pos, range: 1 },
-                {
-                    swampCost: 5,
-                    plainCost: 2,
-                    maxOps: 5000
-                }
-            );
-
-            const distance = path.path.length;
-
-            const energyPerTick = 10;
-
-            const carryParts = Math.ceil((distance * 2 * energyPerTick) / 50);
-
-            totalCarryPartsNeeded += carryParts;
-
-        });
-
-        const carryPerHauler =
-            this.getBody(room).filter(p => p === CARRY).length || 1;
-
-        return Math.ceil(totalCarryPartsNeeded / carryPerHauler);
     }
 
 };
