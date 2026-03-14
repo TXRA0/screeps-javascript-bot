@@ -1,6 +1,7 @@
 let prototypes = require('./prototypes');
 let creepLogic = require('./creeps');
 let roomLogic = require('./room');
+let roomManager = require('./managers/roomManager')
 
 let lastMemoryTick
 let lastMemory
@@ -33,7 +34,8 @@ module.exports.loop = function () {
     _.forEach(Game.myRooms, r => roomLogic.spawning(r));
 	// run defense logic for each room in our empire
 	_.forEach(Game.myRooms, r => roomLogic.defense(r));
-    
+	
+	_.forEach(Game.myRooms, r => roomManager.run(r))
     // run each creep role see /creeps/index.js
     for(var name in Game.creeps) {
         var creep = Game.creeps[name];
