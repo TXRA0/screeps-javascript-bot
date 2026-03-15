@@ -264,57 +264,24 @@ Creep.prototype.getEnergyHaulTargetPorter = function() {
 };
 Creep.prototype.getEnergyHaulTargetRemote = function() {
     if (!this.room) return null;
-
-    if (this.room.storage && this.room.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        return this.room.storage;
-    }
-
     let porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
-    let roomState = porterCreeps.length > 0 ? 'porter' : 'normal';
-
-    let priorityTables = {
-        normal: {
-            STRUCTURE_SPAWN: 1,
-            STRUCTURE_EXTENSION: 1,
-            STRUCTURE_TOWER: 2,
-            STRUCTURE_CONTAINER: 3,
-            STRUCTURE_STORAGE: 4,
-            STRUCTURE_LAB: 5
-        },
-        porter: {
-            STRUCTURE_SPAWN: 2,
-            STRUCTURE_EXTENSION: 2,
-            STRUCTURE_TOWER: 3,
-            STRUCTURE_CONTAINER: 2,
-            STRUCTURE_STORAGE: 1,
-            STRUCTURE_LAB: 3
-        }
-    };
-
+    let hasPorter = porterCreeps.length > 0;
     let allTargets = this.room.find(FIND_MY_STRUCTURES)
         .filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-
     if (allTargets.length === 0) return null;
-
-    let essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
-    let essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
-
-    if (essentialTargets.length > 0) {
-        essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
-        return essentialTargets[0];
+    let priorityOrder = hasPorter
+        ? [STRUCTURE_STORAGE, STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_LAB]
+        : [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_STORAGE];
+    for (const type of priorityOrder) {
+        let targets = allTargets.filter(s => s.structureType === type);
+        if (targets.length > 0) {
+            targets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+            return targets[0];
+        }
     }
-
-    let minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
-    let highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
-    highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
-
-    if (highPriorityTargets.length) return highPriorityTargets[0];
-
     const upgraders = this.room.find(FIND_MY_CREEPS)
         .filter(c => c.memory.role === "upgrader" && c.store.getUsedCapacity(RESOURCE_ENERGY) === 0);
-
     if (upgraders.length) return this.pos.findClosestByRange(upgraders);
-
     return null;
 };
 

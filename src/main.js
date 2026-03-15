@@ -2,6 +2,7 @@ let prototypes = require('./prototypes');
 let creepLogic = require('./creeps');
 let roomLogic = require('./room');
 let roomManager = require('./managers/roomManager')
+global.RoomCache = require('utils.roomCache');
 
 let lastMemoryTick
 let lastMemory

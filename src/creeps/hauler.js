@@ -10,6 +10,8 @@ var hauler = {
         if (!creep.memory.working && creep.store.getFreeCapacity() == 0) {
             creep.memory.working = true;
             creep.say('🚚 hauling');
+            delete creep.memory.energyTarget;
+            delete creep.memory.target;
         }
 
         if (creep.memory.working) {

@@ -28,7 +28,7 @@ var roomManager = {
 
 	generateRoomHash: function (data) {
 		return this.fnv1aHash(JSON.stringify(data));
-},
+	},
 
 	roomNeedsUpdate: function (room, prevHash) {
 		const memRoom = Memory.rooms[room.name];
