@@ -15,6 +15,7 @@ var roomManager = {
 				Memory.rooms[room.name].__hash = newHash;
 			}
 		}
+		this.updateDefcon(room)
 	},
 
 	fnv1aHash: function (str) {
@@ -169,7 +170,59 @@ var roomManager = {
 			terminal: terminalId,
 			towers: Utils.deflate(towers)
 		};
-	}
+	},
+	updateDefcon: function(room) {
+		const memRoom = Memory.rooms[room.name] || {};
+
+		if (memRoom.defcon === undefined) memRoom.defcon = 5;
+		if (memRoom.escalationTicks === undefined) memRoom.escalationTicks = 0;
+
+		const hostiles = room.find(FIND_HOSTILE_CREEPS).length;
+		let defcon = memRoom.defcon;
+		let ticks = memRoom.escalationTicks;
+
+		if (hostiles > 0) {
+			ticks++;
+			if (ticks >= 300) {
+				ticks = 0;
+				if (defcon > 1) defcon--;
+			}
+		} else {
+			ticks--;
+			if (ticks <= 0) {
+				ticks = 0;
+				defcon = 5;
+			}
+		}
+
+		let neededDefenders = 0;
+		let needsAid = false;
+
+		if (defcon === 1) {
+			if (room.controller.safeModeAvailable) {
+				room.controller.activateSafeMode();
+			} else {
+				neededDefenders = 5;
+			}
+		} else if (defcon === 2) {
+			neededDefenders = 5;
+		} else if (defcon === 3) {
+			needsAid = true;
+			neededDefenders = 3;
+		} else if (defcon === 4) {
+			neededDefenders = 2;
+		} else if (defcon === 5) {
+			if (hostiles > 3) neededDefenders = 1;
+			else neededDefenders = 0;
+		}
+
+		memRoom.defcon = defcon;
+		memRoom.escalationTicks = ticks;
+		memRoom.neededDefenders = neededDefenders;
+		memRoom.needsAid = needsAid;
+
+		Memory.rooms[room.name] = memRoom;
+	},
 };
 
 module.exports = roomManager;

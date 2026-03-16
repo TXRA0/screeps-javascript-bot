@@ -6,22 +6,22 @@ var roleBuilder = {
     },
 
     // decides if we need builders
-    spawn: function(room) {
-        let defenderTarget = 1
-		//defconnnnn
+	spawn: function(room) {
+		let defenderTarget = room.memory.neededDefenders || 0;
 
-        let defenders = _.filter(
-            Game.creeps,
-            c => c.memory.role === 'defender' && c.room.name === room.name
-        );
+		let defenders = _.filter(
+			Game.creeps,
+			c => c.memory.role === 'defender' && c.room.name === room.name
+		);
+
 		const queued = _.filter(room.memory.spawnQueue || [], r => r.role === 'defender').length;
 
-        let hostiles = room.find(FIND_HOSTILE_CREEPS);
+		let hostiles = room.find(FIND_HOSTILE_CREEPS);
 
-        if (hostiles.length > 0 && defenders.length + queued < defenderTarget) {
-            this.request(room);
-        }
-    },
+		if (hostiles.length > 0 && defenders.length + queued < defenderTarget) {
+			this.request(room, 'defender');
+		}
+	},
 
     request: function(room) {
 
