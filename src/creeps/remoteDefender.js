@@ -23,7 +23,7 @@ var remoteDefender = {
 
         let maxSegments = Math.floor(energyAvailable / segmentCost);
         if (maxSegments < 1) maxSegments = 1;
-        if (maxSegments > 16) maxSegments = 16;
+        if (maxSegments > 25) maxSegments = 25;
 
         let body = [];
         for (let i = 0; i < maxSegments; i++) {

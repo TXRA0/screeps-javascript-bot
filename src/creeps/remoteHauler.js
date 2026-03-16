@@ -51,7 +51,7 @@ var remoteHauler = {
 
     getBody: function(room) {
 
-        let segment = [CARRY, CARRY, MOVE, MOVE];
+        let segment = [CARRY, MOVE];
 
         let harvesters = _.filter(
             Game.creeps,
@@ -63,7 +63,7 @@ var remoteHauler = {
         let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
 
         let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
-        maxSegments = Math.min(maxSegments, 12);
+        maxSegments = Math.min(maxSegments, 25);
 
         let body = [];
 

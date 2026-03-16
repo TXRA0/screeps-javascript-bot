@@ -78,7 +78,7 @@ var hauler = {
 		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
 
 		let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
-		maxSegments = Math.min(maxSegments, 12);
+		maxSegments = Math.min(maxSegments, 25);
 
 		let body = [];
 		for (let i = 0; i < maxSegments; i++) {

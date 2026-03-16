@@ -138,6 +138,9 @@ var remoteManager = {
 	},
 
 	manageReservers: function(room, remoteRoomName) {
+		if(Memory.rooms[remoteRoomName].reservationTicks > 1000) {
+			return;
+		} 
 		let reserverTarget = 2;
 		let reservers = _.filter(Game.creeps, c =>
 			c.memory.role === "reserver" &&

@@ -69,7 +69,6 @@ Creep.prototype.moveTo = function(target, opts = {}) {
 
     return originalMoveTo.call(this, target, finalOpts);
 };
-
 Creep.prototype.moveToRoom = function(roomName) {
     if (!roomName || typeof roomName !== "string") {
         console.log("moveToRoom called with invalid roomName:", roomName);
@@ -107,7 +106,26 @@ Creep.prototype.findEnergySourceMiner = function() {
 
     return null;
 };
+Creep.prototype.findEnergySourcePioneer = function() {
+    const sources = this.room.find(FIND_SOURCES);
 
+    const usedSources = _.map(
+        _.filter(Game.creeps, c => c.memory.role === 'harvester' && c.memory.sourceId),
+        c => c.memory.sourceId
+    );
+
+    const freeSource = _.find(sources, s =>
+        !usedSources.includes(s.id) &&
+        s.energy > 0
+    );
+
+    if (freeSource) {
+        this.memory.sourceId = freeSource.id;
+        return freeSource;
+    }
+
+    return null;
+};
 Creep.prototype.findEnergySourceRemoteMiner = function() {
     const sources = RoomCache.getSources(this.room);
 
@@ -433,7 +451,7 @@ Creep.prototype.building = function() {
 
 	const result = this.build(target);
 	if (result === ERR_NOT_IN_RANGE) {
-		this.moveTo(target, { reusePath: 10, visualizePathStyle: { stroke: '#ffffff' } });
+		this.moveTo(target, { reusePath: 50, visualizePathStyle: { stroke: '#ffffff' } });
 		return;
 	}
 
@@ -442,7 +460,7 @@ Creep.prototype.building = function() {
 		target.hits < 10000
 		) {
 		if (this.repair(target) === ERR_NOT_IN_RANGE) {
-			this.moveTo(target, { reusePath: 10, visualizePathStyle: { stroke: '#ffaa00' } });
+			this.moveTo(target, { reusePath: 50, visualizePathStyle: { stroke: '#ffaa00' } });
 		}
 	}
 }
@@ -817,6 +835,14 @@ Creep.prototype.reserve = function() {
 
     const controller = this.room.controller;
     if (!controller) return;
+	if (!controller.sign || controller.sign.username !== this.owner.username) {
+		const signText = `${this.room.name} Is a remote of _TXR`;
+		const signResult = this.signController(controller, signText);
+		if (signResult === ERR_NOT_IN_RANGE) {
+			this.moveTo(controller.pos, { maxRooms: 1 });
+		}
+		return;
+	}
 
     const result = this.reserveController(controller);
 
