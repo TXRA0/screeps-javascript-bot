@@ -138,7 +138,7 @@ var remoteManager = {
 	},
 
 	manageReservers: function(room, remoteRoomName) {
-		if(Memory.rooms[remoteRoomName].reservationTicks > 1000) {
+		if(Memory.rooms[remoteRoomName] && Memory.rooms[remoteRoomName].reservationTicks > 1000) {
 			return;
 		} 
 		let reserverTarget = 2;

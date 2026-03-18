@@ -40,7 +40,31 @@ var utils = {
 		});
 
 		return nearestRoom;
-	}
+	},
+	findHostileCreeps(room) {
+		if (room._hostileCreeps) {
+			return room._hostileCreeps
+		}
+
+		const hostileCreeps = room.find(FIND_HOSTILE_CREEPS) 
+
+		room._hostileCreeps = hostileCreeps
+		return room._hostileCreeps
+	},
+	clamp(value, min, max) {
+		if (value < min) {
+			return min
+		}
+
+		if (value > max) {
+			return max
+		}
+
+		return value
+	},
+	getTowerDamage(range) {
+		return this.clamp(750 - 30 * range, 150, 600)
+	},
 };
 
 module.exports = utils;

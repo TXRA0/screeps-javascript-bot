@@ -177,9 +177,28 @@ var roomManager = {
 		if (memRoom.defcon === undefined) memRoom.defcon = 5;
 		if (memRoom.escalationTicks === undefined) memRoom.escalationTicks = 0;
 
-		const hostiles = room.find(FIND_HOSTILE_CREEPS).length;
+		const hostile = Utils.findHostileCreeps(room)
+		let hostiles = hostile.length
 		let defcon = memRoom.defcon;
 		let ticks = memRoom.escalationTicks;
+
+		let totalAttack = 0;
+		let totalRanged = 0;
+		let totalHeal = 0;
+		let anyBoosted = false;
+
+		for (const creep of hostile) {
+			for (const part of creep.body) {
+				if (part.boost) anyBoosted = true;
+
+				if (part.type === ATTACK) totalAttack++;
+				else if (part.type === RANGED_ATTACK) totalRanged++;
+				else if (part.type === HEAL) totalHeal++;
+			}
+		}
+		potentialAttackDam = totalAttack * 30
+		potentialRangedDam = totalRanged * 10
+		potentialHealing = totalHeal * 12
 
 		if (hostiles > 0) {
 			ticks++;
@@ -194,9 +213,9 @@ var roomManager = {
 				defcon = 5;
 			}
 		}
-
 		let neededDefenders = 0;
 		let needsAid = false;
+		let haulerTowerPriority = false
 
 		if (defcon === 1) {
 			if (room.controller.safeModeAvailable) {
@@ -211,6 +230,7 @@ var roomManager = {
 			neededDefenders = 3;
 		} else if (defcon === 4) {
 			neededDefenders = 2;
+			haulerTowerPriority = true
 		} else if (defcon === 5) {
 			if (hostiles > 3) neededDefenders = 1;
 			else neededDefenders = 0;

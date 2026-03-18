@@ -228,10 +228,10 @@ Creep.prototype.getEnergyHaulTarget = function(isRemote = false) {
     const essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
     const essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
 
-    if (essentialTargets.length > 0 && !isRemote) {
-        essentialTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
-        return essentialTargets[0];
-    }
+	if (essentialTargets.length > 0 && porterCreeps.length === 0 && !isRemote) {
+		essentialTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
+		return essentialTargets[0];
+	}
 
     if (allTargets.length > 0) {
         const minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
@@ -245,22 +245,38 @@ Creep.prototype.getEnergyHaulTarget = function(isRemote = false) {
 
 Creep.prototype.getEnergyHaulTargetPorter = function() {
     const roomState = 'normal';
-    const priorityTables = { normal: { STRUCTURE_SPAWN: 1, STRUCTURE_EXTENSION: 1, STRUCTURE_TOWER: 2, STRUCTURE_CONTAINER: 3, STRUCTURE_LAB: 4 } };
+
+    const priorityTables = {
+        normal: {
+            [STRUCTURE_SPAWN]: 1,
+            [STRUCTURE_EXTENSION]: 2,
+            [STRUCTURE_TOWER]: 3,
+            [STRUCTURE_CONTAINER]: 4,
+            [STRUCTURE_LAB]: 5,
+            [STRUCTURE_NUKER]: 6
+        }
+    };
+
+    const allowedTypes = Object.keys(priorityTables[roomState]);
 
     const allTargets = RoomCache.getStructures(this.room)
-        .filter(s => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+        .filter(s =>
+            allowedTypes.includes(s.structureType) &&
+            s.store &&
+            s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        );
+
     if (!allTargets.length) return null;
 
-    const essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
-    const essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
-    if (essentialTargets.length > 0) {
-        essentialTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
-        return essentialTargets[0];
-    }
+    const minPriority = Math.min(
+        ...allTargets.map(t => priorityTables[roomState][t.structureType])
+    );
 
-    const minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
-    const highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
-    highPriorityTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
+    const highPriorityTargets = allTargets.filter(
+        t => priorityTables[roomState][t.structureType] === minPriority
+    );
+
+    highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
     return highPriorityTargets[0] || null;
 };
 
