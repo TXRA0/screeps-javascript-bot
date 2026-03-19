@@ -11,8 +11,11 @@ My profile is here: [**TXR**](https://screeps.com/a/#!/profile/_TXR)
 ## Current Version — 0.45: Memory and defcon
 - Added new memory system and make special memory for remotes/other rooms
 - Added defcon system to evaluate threats and give input for many things
+
+## Next Version = 0.55: Remote building
+- Add remote builders to add roads to remote rooms
   
-## Next Version — 0.55: Trading & cooking
+## Future Version — 0.65: Trading & cooking
 - Add mineralMiner and coreManager roles to get minerals out of a room and get them into storage or terminal depending on their use
 - Add labTechnician role to start cooking boosts
 - Add new manager for civilian boosts and military boosts 
