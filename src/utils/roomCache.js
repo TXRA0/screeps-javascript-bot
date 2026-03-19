@@ -83,7 +83,13 @@ global.RoomCache = {
         const mem = Memory.rooms[room.name];
         if (!mem) return false;
         return mem.mine || false;
-    }
+    },
+	getMinerals(room) {
+		const mem = Memory.rooms[room.name];
+		if (!mem || !mem.minerals) return [];
+		if (!room._minerals) room._minerals = Utils.inflate(mem.minerals);
+		return room._minerals;
+	},
 };
 
 module.exports = RoomCache;

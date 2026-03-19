@@ -214,12 +214,28 @@ Creep.prototype.harvestEnergyPioneer = function() {
     }
 }
 Creep.prototype.getEnergyHaulTarget = function(isRemote = false) {
-    const porterCreeps = _.filter(Game.creeps, c => c.memory.role === 'porter' && c.room.name === this.room.name);
-    const roomState = porterCreeps.length > 0 || isRemote ? 'porter' : 'normal';
+    const porterCreeps = _.filter(
+        Game.creeps,
+        c => c.memory.role === 'porter' && c.room.name === this.room.name
+    );
+
+    if (porterCreeps.length > 0) {
+        const storage = this.room.storage;
+        if (storage && storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            return storage;
+        }
+        return null;
+    }
 
     const priorityTables = {
-        normal: { STRUCTURE_SPAWN: 1, STRUCTURE_EXTENSION: 1, STRUCTURE_TOWER: 2, STRUCTURE_CONTAINER: 3, STRUCTURE_STORAGE: 4, STRUCTURE_LAB: 5 },
-        porter: { STRUCTURE_SPAWN: 2, STRUCTURE_EXTENSION: 2, STRUCTURE_TOWER: 3, STRUCTURE_CONTAINER: 2, STRUCTURE_STORAGE: 1, STRUCTURE_LAB: 3 }
+        normal: {
+            [STRUCTURE_SPAWN]: 1,
+            [STRUCTURE_EXTENSION]: 1,
+            [STRUCTURE_TOWER]: 2,
+            [STRUCTURE_CONTAINER]: 3,
+            [STRUCTURE_STORAGE]: 4,
+            [STRUCTURE_LAB]: 5
+        }
     };
 
     const allTargets = RoomCache.getStructures(this.room)
@@ -228,15 +244,19 @@ Creep.prototype.getEnergyHaulTarget = function(isRemote = false) {
     const essentialTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER];
     const essentialTargets = allTargets.filter(s => essentialTypes.includes(s.structureType));
 
-	if (essentialTargets.length > 0 && porterCreeps.length === 0 && !isRemote) {
-		essentialTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
-		return essentialTargets[0];
-	}
+    if (essentialTargets.length > 0 && !isRemote) {
+        essentialTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
+        return essentialTargets[0];
+    }
 
     if (allTargets.length > 0) {
-        const minPriority = Math.min(...allTargets.map(t => priorityTables[roomState][t.structureType] || 99));
-        const highPriorityTargets = allTargets.filter(t => (priorityTables[roomState][t.structureType] || 99) === minPriority);
-        highPriorityTargets.sort((a,b)=>this.pos.getRangeTo(a)-this.pos.getRangeTo(b));
+        const minPriority = Math.min(
+            ...allTargets.map(t => priorityTables.normal[t.structureType] || 99)
+        );
+        const highPriorityTargets = allTargets.filter(
+            t => (priorityTables.normal[t.structureType] || 99) === minPriority
+        );
+        highPriorityTargets.sort((a, b) => this.pos.getRangeTo(a) - this.pos.getRangeTo(b));
         return highPriorityTargets[0] || null;
     }
 
@@ -869,5 +889,15 @@ Creep.prototype.reserve = function() {
 
     if (result < 0) {
         this.say(result.toString());
+    }
+};
+Creep.prototype.mineralMiner = function() {
+    const minerals = RoomCache.getMinerals(this.room);
+    if (!minerals.length) return;
+
+    const mineral = minerals[0];
+
+    if (this.harvest(mineral) === ERR_NOT_IN_RANGE) {
+        this.moveTo(mineral);
     }
 };
