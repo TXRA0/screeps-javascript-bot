@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var claimer = {
 
     /** @param {Creep} creep **/
@@ -46,5 +49,7 @@ var claimer = {
         };
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(claimer, "claimer")
+}
 module.exports = claimer;

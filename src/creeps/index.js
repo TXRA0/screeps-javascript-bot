@@ -1,4 +1,4 @@
-const mineralMiner = require('./mineralMiner');
+const remoteClearer = require('./remoteClearer');
 
 let creepLogic = {
     harvester:     require('./harvester'),
@@ -17,7 +17,8 @@ let creepLogic = {
 	remoteHauler: require('./remoteHauler'),
 	reserver: require('./reserver'),
 	remoteDefender: require('./remoteDefender'),
-	mineralMiner: require('./mineralMiner')
+	mineralMiner: require('./mineralMiner'),
+	remoteClearer: require('./remoteClearer'),
 }
 
 module.exports = creepLogic;

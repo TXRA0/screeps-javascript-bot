@@ -1,3 +1,7 @@
+const { defender } = require(".");
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var roleBuilder = {
 
     /** @param {Creep} creep **/
@@ -71,5 +75,7 @@ var roleBuilder = {
         };
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(roleBuilder, "defender")
+}
 module.exports = roleBuilder;

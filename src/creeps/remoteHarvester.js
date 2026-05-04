@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var remoteHarvester = {
 
     run: function(creep) {
@@ -44,7 +47,8 @@ var remoteHarvester = {
             }
         };
     }
-
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(remoteHarvester, "remoteHarvester")
+}
 module.exports = remoteHarvester;

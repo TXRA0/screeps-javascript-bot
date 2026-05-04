@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var mineralMiner = {
 
     /** @param {Creep} creep **/
@@ -102,7 +105,8 @@ var mineralMiner = {
             }
         };
     },
-
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(mineralMiner, "mineraLMiner")
+}
 module.exports = mineralMiner;

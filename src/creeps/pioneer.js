@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var pioneer = {
 	run: function (/** @type {any} */ creep, /** @type {any} */  /** @type {{ pioneer: (arg0: any) => void; }} */ toolbox, /** @type {any} */ ) {
 		let flag = _.find(Game.flags, f => f.name.startsWith("supportRoom_"));
@@ -94,5 +97,8 @@ var pioneer = {
             }
         };
     }
+}
+if (config.test.profiler) {
+  screepsProfiler.registerObject(pioneer, "pioneer")
 }
 module.exports = pioneer;

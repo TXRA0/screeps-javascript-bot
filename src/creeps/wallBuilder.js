@@ -1,3 +1,7 @@
+const { wallBuilder } = require(".");
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var roleWallBuilder = {
 	run: function (creep,  toolbox) {
 
@@ -77,5 +81,8 @@ var roleWallBuilder = {
             }
         };
     }
+}
+if (config.test.profiler) {
+  screepsProfiler.registerObject(roleWallBuilder, "wallBuilder")
 }
 module.exports = roleWallBuilder;

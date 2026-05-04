@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var ranger = {
 
     /** @param {Creep} creep **/
@@ -75,5 +78,7 @@ var ranger = {
         };
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(ranger, "ranger")
+}
 module.exports = ranger;

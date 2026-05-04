@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var remoteHauler = {
 
     run: function(creep) {
@@ -84,7 +87,8 @@ var remoteHauler = {
             }
         };
     }
-
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(remoteHauler, "remoteHauler")
+}
 module.exports = remoteHauler;

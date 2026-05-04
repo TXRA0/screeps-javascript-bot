@@ -1,4 +1,5 @@
 var Utils = require('../utils');
+var { planRoad } = require('../utils/road')
 
 var remoteManager = {
 	run: function(room) {
@@ -20,6 +21,9 @@ var remoteManager = {
 			}
 			this.manageReservers(room, remoteRoomName);
 		}
+	//	if (room.controller && room.controller.level >= 4 && Game.time % 100 === 0) {
+		//	this.planRemoteRoads(room);
+	//	}
 	},
 
 	updateRemoteRoomMemory: function(remoteRoomName) {
@@ -117,26 +121,49 @@ var remoteManager = {
 			this.request(room, "remoteHauler", remoteRoomName, room.name, 5);
 		}
 	},
-
 	manageDefenders: function(room, remoteRoomName) {
 		let remoteRoom = Game.rooms[remoteRoomName];
 		if (!remoteRoom) return;
+
+		//creeps
 		let hostiles = remoteRoom.find(FIND_HOSTILE_CREEPS);
-		if (!hostiles.length) return;
-		let defenderTarget = hostiles.length < 3 ? 1 : 2;
-		let defenders = _.filter(Game.creeps, c =>
-			c.memory.role === "remoteDefender" &&
-			c.memory.homeRoom === room.name &&
-			c.memory.remoteRoom === remoteRoomName
-		);
-		const queued = _.filter(room.memory.spawnQueue || [], r =>
-			r.role === "remoteDefender" && r.remoteRoom === remoteRoomName
-		).length;
-		if (defenders.length + queued < defenderTarget) {
-			this.request(room, "remoteDefender", remoteRoomName, room.name, 3);
+		if (hostiles.length) {
+			let defenderTarget = hostiles.length < 3 ? 1 : 2;
+
+			let defenders = _.filter(Game.creeps, c =>
+				c.memory.role === "remoteDefender" &&
+				c.memory.homeRoom === room.name &&
+				c.memory.remoteRoom === remoteRoomName
+			);
+
+			const queuedDef = _.filter(room.memory.spawnQueue || [], r =>
+				r.role === "remoteDefender" && r.remoteRoom === remoteRoomName
+			).length;
+
+			if (defenders.length + queuedDef < defenderTarget) {
+				this.request(room, "remoteDefender", remoteRoomName, room.name, 3);
+			}
+		}
+		//strucs
+		let hostileStructures = remoteRoom.find(FIND_HOSTILE_STRUCTURES);
+		if (hostileStructures.length) {
+			let clearerTarget = 1;
+
+			let clearers = _.filter(Game.creeps, c =>
+				c.memory.role === "remoteClearer" &&
+				c.memory.homeRoom === room.name &&
+				c.memory.remoteRoom === remoteRoomName
+			);
+
+			const queuedClr = _.filter(room.memory.spawnQueue || [], r =>
+				r.role === "remoteClearer" && r.remoteRoom === remoteRoomName
+			).length;
+
+			if (clearers.length + queuedClr < clearerTarget) {
+				this.request(room, "remoteClearer", remoteRoomName, room.name, 3);
+			}
 		}
 	},
-
 	manageReservers: function(room, remoteRoomName) {
 		if(Memory.rooms[remoteRoomName] && Memory.rooms[remoteRoomName].reservationTicks > 1000) {
 			return;
@@ -190,7 +217,91 @@ var remoteManager = {
 		maxSegments = Math.max(1, Math.min(maxSegments, 12));
 		let carryPerHauler = maxSegments * carryPerSegment;
 		return Math.ceil(totalCarryPartsNeeded / carryPerHauler);
-	}
+	},
+	planRemoteRoads: function(room) {
+		console.log(`[RoadPlanner] Running for room: ${room.name}`);
+
+		const spawn = room.find(FIND_MY_SPAWNS)[0];
+		if (!spawn) {
+			console.log(`[RoadPlanner] ❌ No spawn found`);
+			return;
+		}
+
+		const startFlagName = `startingPos_${room.name}`;
+		let startFlag = Game.flags[startFlagName];
+
+		if (!startFlag) {
+			console.log(`[RoadPlanner] ⚠️ Creating start flag`);
+			const result = spawn.room.createFlag(spawn.pos, startFlagName);
+			if (typeof result === "string") {
+				startFlag = Game.flags[result];
+			}
+		}
+
+		if (!startFlag) {
+			console.log(`[RoadPlanner] ❌ Failed to get start flag`);
+			return;
+		}
+
+		console.log(`[RoadPlanner] ✅ Start flag at ${startFlag.pos}`);
+
+		let flags = _.filter(Game.flags, f => f.name.startsWith(`remoteRoom_${room.name}`));
+		console.log(`[RoadPlanner] Found ${flags.length} remote flags`);
+
+		for (const flag of flags) {
+			let remoteRoomName = flag.name.split("_")[2];
+			if (!remoteRoomName) continue;
+
+			console.log(`➡️ Processing remote room: ${remoteRoomName}`);
+
+			const remoteRoom = Game.rooms[remoteRoomName];
+			if (!remoteRoom) {
+				console.log(`   ⏳ No vision for ${remoteRoomName}`);
+				continue;
+			}
+
+			const sources = remoteRoom.find(FIND_SOURCES);
+			console.log(`   🔍 Found ${sources.length} sources`);
+
+			if (!sources.length) continue;
+
+			let targetFlags = [];
+
+			for (const source of sources) {
+				const flagName = `roadTarget_${room.name}_${remoteRoomName}_${source.id}`;
+				let targetFlag = Game.flags[flagName];
+
+				if (!targetFlag) {
+					console.log(`   🚩 Creating flag for source ${source.id}`);
+					const res = source.room.createFlag(source.pos, flagName);
+					if (typeof res === "string") {
+						targetFlag = Game.flags[res];
+					}
+				}
+
+				if (targetFlag) {
+					console.log(`   ✅ Target flag at ${targetFlag.pos}`);
+					targetFlags.push(targetFlag.pos);
+				}
+			}
+
+			if (targetFlags.length) {
+				if (!Memory.roadPlanner[room.name]) {
+					console.log(`   🛣️ Planning road to ${targetFlags.length} targets`);
+
+					planRoad(room.name, {
+						fromPos: startFlag.pos,
+						targets: targetFlags,
+						range: 1,
+						build: true,
+						cpuBucketMin: 0 // debug mode
+					});
+				} else {
+					console.log(`   ⏭️ Task already exists, skipping planRoad`);
+				}
+			}
+		}
+	},
 };
 
 module.exports = remoteManager;

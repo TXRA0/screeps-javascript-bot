@@ -1,7 +1,7 @@
 const screepsProfiler = require("../screeps-profiler")
 const config = require('../config')
 
-var remoteDefender = {
+var remoteClearer = {
 
     run: function(creep) {
 
@@ -11,16 +11,22 @@ var remoteDefender = {
         }
 
         let hostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+		let hostileStruc = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES);
         if (hostile) {
-            if (creep.rangedAttack(hostile) === ERR_NOT_IN_RANGE) {
+            if (creep.attack(hostile) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(hostile, { visualizePathStyle: { stroke: '#ff0000' } });
+            }
+            return;
+        } else if (hostileStruc) {
+            if (creep.attack(hostileStruc) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(hostileStruc, { visualizePathStyle: { stroke: '#ff0000' } });
             }
             return;
         }
     },
     getBody: function(room) {
-        let segment = [RANGED_ATTACK, MOVE];
-        let segmentCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
+        let segment = [ATTACK, MOVE];
+        let segmentCost = BODYPART_COST[ATTACK] + BODYPART_COST[MOVE];
 
         let energyAvailable = room.energyCapacityAvailable;
 
@@ -30,7 +36,7 @@ var remoteDefender = {
 
         let body = [];
         for (let i = 0; i < maxSegments; i++) {
-            body.push(RANGED_ATTACK, MOVE);
+            body.push(ATTACK, MOVE);
         }
 
         return body;
@@ -38,9 +44,9 @@ var remoteDefender = {
 
     getSpawnData: function(room) {
         return {
-            name: "Remote_Defender" + Game.time,
+            name: "Remote_Clearer" + Game.time,
             memory: {
-                role: "remoteDefender",
+                role: "remoteClearer",
                 homeRoom: room.name,
                 working: false
             }
@@ -48,6 +54,6 @@ var remoteDefender = {
     }
 };
 if (config.test.profiler) {
-  screepsProfiler.registerObject(remoteDefender, "remoteDefender")
+  screepsProfiler.registerObject(remoteClearer, "remoteClearer")
 }
-module.exports = remoteDefender;
+module.exports = remoteClearer;

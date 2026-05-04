@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var hauler = {
 
     /** @param {Creep} creep **/
@@ -117,5 +120,7 @@ var hauler = {
         return Math.ceil(totalCarryPartsNeeded / carryPerHauler);
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(hauler, "hauler")
+}
 module.exports = hauler;

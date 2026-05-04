@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var harvester = {
 
     /** @param {Creep} creep **/
@@ -89,5 +92,7 @@ var harvester = {
         };
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(harvester, "harvester")
+}
 module.exports = harvester;

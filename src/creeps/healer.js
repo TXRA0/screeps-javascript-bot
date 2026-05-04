@@ -1,3 +1,6 @@
+const screepsProfiler = require("../screeps-profiler")
+const config = require('../config')
+
 var healer = {
 
     /** @param {Creep} creep **/
@@ -74,5 +77,7 @@ var healer = {
         };
     }
 };
-
+if (config.test.profiler) {
+  screepsProfiler.registerObject(healer, "healer")
+}
 module.exports = healer;

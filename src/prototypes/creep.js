@@ -40,7 +40,11 @@ Creep.prototype.moveTo = function(target, opts = {}) {
                 room.find(FIND_CREEPS).forEach(c => { if (c.id !== this.id) matrix.set(c.pos.x, c.pos.y, 255); });
                 room.find(FIND_POWER_CREEPS).forEach(c => { if (c.id !== this.id) matrix.set(c.pos.x, c.pos.y, 255); });
             }
-            room.find(FIND_CONSTRUCTION_SITES).forEach(site => matrix.set(site.pos.x, site.pos.y, 255));
+            room.find(FIND_CONSTRUCTION_SITES).forEach(site => {
+				if (site.structureType !== STRUCTURE_ROAD) {
+					matrix.set(site.pos.x, site.pos.y, 255);
+				}
+			});
             return matrix;
         }
     }, opts);
@@ -748,7 +752,8 @@ Creep.prototype.berserker = function() {
 
 	const enemyCreeps = this.room.find(FIND_HOSTILE_CREEPS);
 	const enemyStructures = this.room.find(FIND_STRUCTURES, {
-		filter: struct => struct.structureType !== STRUCTURE_WALL
+		filter: struct => struct.structureType !== STRUCTURE_WALL &&
+		struct.structureType !== STRUCTURE_ROAD
 	});
 	const enemies = enemyCreeps.concat(enemyStructures);
 
@@ -901,3 +906,6 @@ Creep.prototype.mineralMiner = function() {
         this.moveTo(mineral);
     }
 };
+Creep.prototype.coreManager = function() {
+	
+}
