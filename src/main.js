@@ -1,12 +1,11 @@
-//var spiderRoad = require('./utils/road')
 const prototypes = require('./prototypes');
 const creepLogic = require('./creeps');
 const roomLogic = require('./room');
 const roomManager = require('./managers/roomManager');
-//const marketManager = require('./managers/marketManager')
 const profiler = require('./screeps-profiler');
-var RoomCache = require('./utils/roomCache')
-
+var RoomCache = require('./utils/roomCache');
+var Traveler = require('./Traveler');
+var spiderRoad = require('./utils/road')
 let lastMemoryTick;
 let lastMemory;
 
@@ -40,7 +39,8 @@ function tryInitSameMemory() {
 
 module.exports.loop = function () {
     profiler.wrap(() => {
-        tryInitSameMemory();
+
+		tryInitSameMemory();
 
         Game.myRooms = _.filter(Game.rooms, r => r.controller && r.controller.my && r.controller.level > 0);
 
@@ -49,7 +49,7 @@ module.exports.loop = function () {
             roomLogic.defense(r);
             roomManager.run(r);
 			if(r.controller && r.controller.level >= 6 && Game.time % 100 === 0) {
-				marketManager.run(r)
+	//			marketManager.run(r)
 			}
         });
 
@@ -66,11 +66,11 @@ module.exports.loop = function () {
                 console.log('Clearing non-existing creep memory:', name);
             }
         });
-	//	spiderRoad.mountSpiderRoad()
-
-//		spiderRoad.runRoadTasks()
+		spiderRoad.mountSpiderRoad()
+		spiderRoad.runRoadTasks()
     });
 };
+
 // 1. Reduce Creep.moveTo CPU (435.5 total)
 // - Cache paths in creep.memory and reuse them.
 // - Use moveByPath with serialized paths instead of recalculating.

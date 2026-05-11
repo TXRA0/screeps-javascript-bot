@@ -16,6 +16,23 @@ var remoteHauler = {
         }
 
         if (creep.memory.working) {
+			//efficient? idk
+			if (creep.room.name === creep.memory.remoteRoom) {
+				let builder = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
+					filter: c =>
+						c.memory.role === 'remoteBuilder' &&
+						c.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+				});
+
+				if (builder) {
+
+					if (creep.transfer(builder, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+						creep.moveTo(builder);
+					}
+
+					return;
+				}
+			}
 
             if (creep.room.name !== creep.memory.homeRoom) {
                 creep.moveToRoom(creep.memory.homeRoom);
@@ -52,30 +69,39 @@ var remoteHauler = {
         }
     },
 
-    getBody: function(room) {
+	getBody: function(homeRoom, remoteRoomName) {
+		const mem = Memory.rooms[remoteRoomName] || {};
+		const roadsBuilt = mem.roadsBuilt === true;
 
-        let segment = [CARRY, MOVE];
+		console.log(remoteRoomName, roadsBuilt);
 
-        let harvesters = _.filter(
-            Game.creeps,
-            c => c.memory.role === 'harvester' && c.room.name === room.name
-        );
+		let segment = roadsBuilt
+			? [CARRY, CARRY, MOVE]
+			: [CARRY, MOVE];
 
-        let energyAvailable = harvesters.length ? room.energyCapacityAvailable : room.energyAvailable;
+		let harvesters = _.filter(
+			Game.creeps,
+			c => c.memory.role === 'harvester' && c.room.name === homeRoom.name
+		);
 
-        let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
+		let energyAvailable = harvesters.length
+			? homeRoom.energyCapacityAvailable
+			: homeRoom.energyAvailable;
 
-        let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
-        maxSegments = Math.min(maxSegments, 25);
+		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
 
-        let body = [];
+		let maxSegments = Math.max(1, Math.floor(energyAvailable / segmentCost));
+		maxSegments = roadsBuilt
+			? Math.min(maxSegments, 16)
+			: Math.min(maxSegments, 25);
 
-        for (let i = 0; i < maxSegments; i++) {
-            body.push(...segment);
-        }
+		let body = [];
+		for (let i = 0; i < maxSegments; i++) {
+			body.push(...segment);
+		}
 
-        return body;
-    },
+		return body;
+	},
 
     getSpawnData: function(room) {
         return {

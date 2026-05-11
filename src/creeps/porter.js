@@ -30,17 +30,30 @@ var porter = {
             creep.say('🚧 filling');
         }
 
-        if(creep.memory.working) {
-			const target = creep.getEnergyHaulTargetPorter();
+		if (creep.memory.working) {
+
+			let target = Game.getObjectById(creep.memory.deliveryTarget);
+
+			if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+				target = creep.getEnergyHaulTargetPorter();
+				creep.memory.deliveryTarget = target ? target.id : null;
+			}
+
 			if (target) {
-				if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+				const result = creep.transfer(target, RESOURCE_ENERGY);
+
+				if (result === ERR_NOT_IN_RANGE) {
 					creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
 				}
+
+				if (result === OK || result === ERR_FULL) {
+					creep.memory.deliveryTarget = null;
+				}
+
 			} else {
 				creep.say('sleep', true);
 			}
-        }
-        else {
+		} else {
 			creep.getEnergyTargetPorter();
         }
     },

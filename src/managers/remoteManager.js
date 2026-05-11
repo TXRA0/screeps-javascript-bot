@@ -19,11 +19,15 @@ var remoteManager = {
 			if (room.controller && room.controller.level >= 3) {
 				this.manageDefenders(room, remoteRoomName);
 			}
-			this.manageReservers(room, remoteRoomName);
+			this.manageReservers(room, remoteRoomName); 
+			if (room.controller && room.controller.level >= 4) {
+				this.manageJanitors(room, remoteRoomName)
+				this.manageBuilders(room, remoteRoomName);
+			}
 		}
-	//	if (room.controller && room.controller.level >= 4 && Game.time % 100 === 0) {
-		//	this.planRemoteRoads(room);
-	//	}
+		if (room.controller && room.controller.level >= 4 && Game.time % 100 == 0) {
+			this.planRemoteRoads(room);
+		}
 	},
 
 	updateRemoteRoomMemory: function(remoteRoomName) {
@@ -33,11 +37,29 @@ var remoteManager = {
 		const memRoom = Memory.rooms[remoteRoomName] || {};
 		const prevHash = memRoom.__hash;
 
+		var structures = room.find(FIND_STRUCTURES)
+
 		const sources = room.find(FIND_SOURCES);
-		const containers = _.filter(
-			room.find(FIND_STRUCTURES),
+		const containers = structures.filter(
 			s => s.structureType === STRUCTURE_CONTAINER
 		);
+		const sites = room.find(FIND_CONSTRUCTION_SITES)
+		let hasSites = false;
+		let siteAmount = 0;
+
+		if (sites.length) {
+			hasSites = true;
+			siteAmount = sites.length;
+		}
+		var roads = structures.filter(
+			s => s.structureType === STRUCTURE_ROAD
+		);
+		let roadsBuilt = false;
+
+		if(roads.length > 4) {
+			roadsBuilt = true;
+		}
+		
 
 		const controller = room.controller;
 
@@ -69,9 +91,14 @@ var remoteManager = {
 			sourcePositions: _.map(sources, s => [s.pos.x, s.pos.y]),
 
 			sourceContainers: Utils.deflate(containers),
+			roads: Utils.deflate(roads),
 
 			reservation: reservation,
-			reservationTicks: reservationTicks
+			reservationTicks: reservationTicks,
+
+			hasSites: hasSites,
+			siteAmount: siteAmount,
+			roadsBuilt: roadsBuilt,
 		};
 
 		const newHash = this.fnv1aHash(JSON.stringify(newData));
@@ -181,6 +208,51 @@ var remoteManager = {
 			this.request(room, "reserver", remoteRoomName, room.name, 6);
 		}
 	},
+	//possibly make it dynamic to site amount?
+	manageBuilders: function(room, remoteRoomName) {
+		const mem = Memory.rooms[remoteRoomName];
+		if (!mem || !mem.hasSites) return;
+		const siteCount = mem.siteAmount;
+		let remoteBuilders = _.filter(Game.creeps, c =>
+			c.memory.role === "remoteBuilder" &&
+			c.memory.homeRoom === room.name &&
+			c.memory.remoteRoom === remoteRoomName
+		);
+		const builderTarget = Math.ceil(siteCount / 15);
+
+
+		const queued = _.filter(room.memory.spawnQueue || [], r =>
+			r.role === "remoteBuilder" && r.remoteRoom === remoteRoomName
+		).length;
+
+		if (remoteBuilders.length + queued < builderTarget) {
+			this.request(room, "remoteBuilder", remoteRoomName, room.name, 5);
+		}
+	},
+	manageJanitors: function(room, remoteRoomName) {
+		const mem = Memory.rooms[remoteRoomName];
+		if (!mem) return;
+		const roads = mem.roads
+			.map(id => Game.getObjectById(id))
+			.filter(Boolean);
+		const damagedRoads = roads.filter(road => road.hits < 3600);
+
+		if (damagedRoads.length > 0) {
+			let remoteJanitors = _.filter(Game.creeps, c =>
+				c.memory.role === "remoteJanitor" &&
+				c.memory.homeRoom === room.name &&
+				c.memory.remoteRoom === remoteRoomName
+			);
+
+			const queued = _.filter(room.memory.spawnQueue || [], r =>
+				r.role === "remoteJanitor" && r.remoteRoom === remoteRoomName
+			).length;
+
+			if (remoteJanitors.length + queued < 1) {
+				this.request(room, "remoteJanitor", remoteRoomName, room.name, 6);
+			}
+		}
+	},
 
 	request: function(room, role, remoteRoomName, homeRoomName, priority) {
 		room.memory.spawnQueue = room.memory.spawnQueue || [];
@@ -193,29 +265,59 @@ var remoteManager = {
 	},
 
 	calculateNeededHaulers: function(room, remoteRoomName) {
+
 		const spawn = room.find(FIND_MY_SPAWNS)[0];
 		if (!spawn) return 0;
+
 		const remoteRoom = Game.rooms[remoteRoomName];
 		if (!remoteRoom) return 1;
+
+		const mem = Memory.rooms[remoteRoomName];
+		const roadsBuilt = mem && mem.roadsBuilt;
+
 		let totalCarryPartsNeeded = 0;
+
 		remoteRoom.find(FIND_SOURCES).forEach(source => {
+
 			const path = PathFinder.search(
 				spawn.pos,
 				{ pos: source.pos, range: 1 },
-				{ swampCost: 5, plainCost: 2, maxOps: 5000 }
+				{
+					swampCost: roadsBuilt ? 1 : 5,
+					plainCost: roadsBuilt ? 1 : 2,
+					maxOps: 2000
+				}
 			);
+
 			const distance = path.path.length;
+
 			const energyPerTick = 10;
-			const carryParts = Math.ceil((distance * 2 * energyPerTick) / 50);
+
+			const carryParts = Math.ceil(
+				(distance * 2 * energyPerTick) / 50
+			);
+
 			totalCarryPartsNeeded += carryParts;
 		});
-		const segment = [CARRY, CARRY, MOVE, MOVE];
+
+		let segment;
+
+		if (roadsBuilt) {
+			segment = [CARRY, CARRY, MOVE];
+		} else {
+			segment = [CARRY, CARRY, MOVE, MOVE];
+		}
+
 		const carryPerSegment = 2;
+
 		let energyAvailable = room.energyCapacityAvailable;
 		let segmentCost = _.sum(segment, p => BODYPART_COST[p]);
 		let maxSegments = Math.floor(energyAvailable / segmentCost);
+
 		maxSegments = Math.max(1, Math.min(maxSegments, 12));
+
 		let carryPerHauler = maxSegments * carryPerSegment;
+
 		return Math.ceil(totalCarryPartsNeeded / carryPerHauler);
 	},
 	planRemoteRoads: function(room) {

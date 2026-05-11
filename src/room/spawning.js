@@ -34,20 +34,30 @@ function spawnCreeps(room) {
         let request = queue[0];
         if (!request) return;
 
-        let body = creepLogic[request.role].getBody(room);
+        let body = creepLogic[request.role].getBody(room, request.remoteRoom);
         let creepSpawnData = creepLogic[request.role].getSpawnData(room);
 
         let memory = creepSpawnData.memory || {};
         if (request.remoteRoom) memory.remoteRoom = request.remoteRoom;
+		let creepName = creepSpawnData.name + randomWord()
 
-        let result = spawn.spawnCreep(body, creepSpawnData.name, { memory: memory });
+        let result = spawn.spawnCreep(body, creepName, { memory: memory });
 
-        console.log(`${spawn.name} tried to spawn ${request.role}:`, result, JSON.stringify(body));
+        console.log(`${spawn.name} tried to spawn ${request.role}, ${creepName}:`, result, JSON.stringify(body));
 
         if (result === OK) {
             Memory.rooms[room.name].spawnQueue.shift();
         }
     });
 }
+function randomWord() {
+    const letters = "abcdefghijklmnopqrstuvwxyz";
+    let word = "";
+    for (let i = 0; i < 3; i++) {
+        word += letters[Math.floor(Math.random() * letters.length)];
+    }
+    return word;
+}
+
 
 module.exports = runSpawner;

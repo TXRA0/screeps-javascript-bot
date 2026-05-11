@@ -19,6 +19,8 @@ let creepLogic = {
 	remoteDefender: require('./remoteDefender'),
 	mineralMiner: require('./mineralMiner'),
 	remoteClearer: require('./remoteClearer'),
+	remoteBuilder: require('./remoteBuilder'),
+	remoteJanitor: require('./remoteJanitor'),
 }
 
 module.exports = creepLogic;
